@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FVL League - لیگ مجازی</title>
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="mancity">
+
+    <!-- BACKGROUND ANIMATED LIGHTS -->
+    <div class="light-bg-container">
+        <div class="glow-ball orb-1"></div>
+        <div class="glow-ball orb-2"></div>
+        <div class="glow-ball orb-3"></div>
+        <div class="light-beam"></div>
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div class="login-container" id="loginScreen">
+        <div class="login-card">
+            <div class="fvl-badge-small">FVL</div>
+            <h2 class="login-title">ورود به لیگ FVL</h2>
+            
+            <div class="input-group">
+                <i class="fa-solid fa-user"></i>
+                <input type="text" id="username" placeholder="نام کاربری (مثلاً: mancity یا admin)">
+            </div>
+            
+            <div class="input-group">
+                <i class="fa-solid fa-lock"></i>
+                <input type="password" id="password" placeholder="رمز عبور">
+            </div>
+            
+            <button class="btn-login" onclick="handleLogin()">ورود به حساب</button>
+            <p class="login-error" id="loginError">نام کاربری یا رمز عبور اشتباه است!</p>
+        </div>
+    </div>
+
+    <!-- MAIN HEADER -->
+    <header class="header">
+        <div class="header-right">
+            <div class="budget-box">
+                <i class="fa-solid fa-coins"></i>
+                <span id="userBudgetDisplay">100</span>
+            </div>
+            <div class="team-badge" id="teamBadge"></div>
+        </div>
+
+        <!-- در بخش header-left -->
+    <button class="btn-icon" title="تنظیمات" onclick="openSettingsModal()"><i class="fa-solid fa-gear"></i></button>
+    <button class="btn-icon btn-logout" onclick="openLogoutModal()" title="خروج از حساب">
+        <i class="fa-solid fa-right-from-bracket"></i>
+    </button>
+</div>
+    </header>
+
+    <!-- MODULE 1: HOME SECTION -->
+    <main class="main-content page-section active" id="homeSection">
+        <div class="football-card">
+            <div class="fvl-logo-container">
+                <div class="fvl-shield">
+                    <i class="fa-solid fa-trophy trophy-icon"></i>
+                    <span class="fvl-text">FVL</span>
+                </div>
+                <span class="fvl-subtext">VIRTUAL LEAGUE</span>
+            </div>
+
+            <div class="home-team-crest" id="homeTeamLogo"></div>
+
+            <div class="hero-text-group">
+                <h1 id="welcomeText" class="welcome-title">تیم منچستر سیتی</h1>
+                <div class="stadium-tag">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>فصل رسمی ۲۰۲۶ - استادیوم اختصاصی</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODULE 2: SQUAD & TACTICS SECTION -->
+    <main class="main-content page-section" id="squadSection">
+        <div class="squad-container">
+            <div class="upload-block">
+                <div class="squad-header">
+                    <h2><i class="fa-solid fa-shirt"></i> بارگذاری تصویر ترکیب</h2>
+                </div>
+                <div class="upload-wrapper">
+                    <div class="upload-card" onclick="document.getElementById('squadImageInput').click()">
+                        <input type="file" id="squadImageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event, 'squadPreview', 'squadPlaceholder', 'squadResetBtn')">
+                        <div class="upload-placeholder" id="squadPlaceholder">
+                            <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                            <p class="upload-text">برای انتخاب عکس ترکیب کلیک کنید یا عکس را اینجا رها کنید</p>
+                        </div>
+                        <img id="squadPreview" class="image-preview" src="" alt="پیش‌نمایش ترکیب" style="display: none;">
+                    </div>
+                    <button class="btn-login btn-upload-reset" id="squadResetBtn" onclick="resetImageUpload('squadImageInput', 'squadPreview', 'squadPlaceholder', 'squadResetBtn')" style="display: none; margin-top: 10px;">
+                        <i class="fa-solid fa-trash"></i> حذف عکس ترکیب
+                    </button>
+                </div>
+            </div>
+
+            <div class="upload-block">
+                <div class="squad-header">
+                    <h2><i class="fa-solid fa-clipboard-list"></i> بارگذاری تصویر تاکتیک</h2>
+                </div>
+                <div class="upload-wrapper">
+                    <div class="upload-card" onclick="document.getElementById('tacticImageInput').click()">
+                        <input type="file" id="tacticImageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event, 'tacticPreview', 'tacticPlaceholder', 'tacticResetBtn')">
+                        <div class="upload-placeholder" id="tacticPlaceholder">
+                            <i class="fa-solid fa-sliders upload-icon"></i>
+                            <p class="upload-text">برای انتخاب عکس تاکتیک کلیک کنید یا عکس را اینجا رها کنید</p>
+                        </div>
+                        <img id="tacticPreview" class="image-preview" src="" alt="پیش‌نمایش تاکتیک" style="display: none;">
+                    </div>
+                    <button class="btn-login btn-upload-reset" id="tacticResetBtn" onclick="resetImageUpload('tacticImageInput', 'tacticPreview', 'tacticPlaceholder', 'tacticResetBtn')" style="display: none; margin-top: 10px;">
+                        <i class="fa-solid fa-trash"></i> حذف عکس تاکتیک
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODULE 3: TRANSFERS SECTION -->
+    <main class="main-content page-section" id="transfersSection">
+        <div class="transfers-container">
+            <div class="transfer-card">
+                <div class="card-title">
+                    <i class="fa-solid fa-cart-plus text-success"></i>
+                    <h3>خرید بازیکن (درخواست عمومی)</h3>
+                </div>
+                <div class="input-inline-group">
+                    <input type="text" id="buyPlayerName" placeholder="نام بازیکن مورد نظر را وارد کنید...">
+                    <button class="btn-action btn-buy" onclick="submitRequest('buy')">ثبت درخواست خرید</button>
+                </div>
+            </div>
+
+            <div class="transfer-card">
+                <div class="card-title">
+                    <i class="fa-solid fa-hand-holding-dollar text-danger"></i>
+                    <h3>فروش بازیکن</h3>
+                </div>
+                <div class="input-inline-group">
+                    <input type="text" id="sellPlayerName" placeholder="نام بازیکن جهت فروش را وارد کنید...">
+                    <button class="btn-action btn-sell" onclick="submitRequest('sell')">ثبت برای فروش</button>
+                </div>
+            </div>
+
+            <div class="transfer-card">
+                <div class="card-title">
+                    <i class="fa-solid fa-user-tie text-warning"></i>
+                 
+                    <h3>درخواست مستقیم به مربی</h3>
+                </div>
+                <div class="input-inline-group multi-input">
+                    <input type="text" id="coachPlayerName" placeholder="نام بازیکن...">
+                    <input type="number" id="coachOfferPrice" placeholder="قیمت پیشنهادی (میلیون)..." min="1">
+                    <button class="btn-action btn-coach" onclick="submitRequest('coach')">ارسال پیشنهاد</button>
+                </div>
+            </div>
+
+            <div class="requests-inbox-card">
+                <div class="inbox-header">
+                    <h3><i class="fa-solid fa-inbox"></i> صندوق درخواست‌ها (مشترک)</h3>
+                    <button class="btn-refresh" onclick="renderRequests()"><i class="fa-solid fa-rotate-right"></i> بروزرسانی</button>
+                </div>
+                <div class="requests-list" id="requestsList"></div>
+            </div>
+        </div>
+    
+    </main>
+
+
+    <!-- MODULE 4: NEWS SECTION -->
+    <main class="main-content page-section" id="newsSection">
+        <div class="news-container">
+            <div class="admin-news-panel admin-only" style="display: none;">
+                <div class="card-title">
+                    <i class="fa-solid fa-pen-to-square text-warning"></i>
+                    <h3 id="newsFormTitle">مدیریت اخبار (ویژه مدیریت)</h3>
+                </div>
+                <input type="hidden" id="editNewsId" value="">
+                <div class="news-form-group">
+                    <select id="newsCategorySelect">
+                        <option value="havashi">حواشی</option>
+                        <option value="leaguenameh">لیگ‌نامه</option>
+                        <option value="zarebin">زیر ذره‌بین</option>
+                    </select>
+                    <input type="text" id="newsTitleInput" placeholder="عنوان خبر را وارد کنید...">
+                </div>
+                <textarea id="newsContentInput" rows="4" placeholder="متن کامل خبر را بنویسید..."></textarea>
+                <div class="form-actions">
+                    <button class="btn-action btn-buy" onclick="saveNews()"><i class="fa-solid fa-paper-plane"></i> انتشار / ذخیره خبر</button>
+                    <button class="btn-action btn-cancel" id="btnCancelEdit" onclick="cancelNewsEdit()" style="display: none;">انصراف</button>
+                </div>
+            </div>
+
+            <div class="news-tabs">
+                <button class="news-tab-btn active" onclick="filterNews('all', this)">همه اخبار</button>
+                <button class="news-tab-btn" onclick="filterNews('havashi', this)">🔥 حواشی</button>
+                <button class="news-tab-btn" onclick="filterNews('leaguenameh', this)">📜 لیگ‌نامه</button>
+                <button class="news-tab-btn" onclick="filterNews('zarebin', this)">🔍 زیر ذره‌بین</button>
+            </div>
+            <div class="news-feed" id="newsFeed"></div>
+        </div>
+    </main>
+
+    <!-- MODULE 5: LEAGUE SECTION -->
+    <main class="main-content page-section" id="leagueSection">
+        <div class="league-container">
+            <!-- زیرمنوی تب‌های لیگ -->
+            <div class="subnav-tabs">
+                <button class="subnav-btn active" onclick="switchLeagueSubTab('standingsSub', this)"><i class="fa-solid fa-table-list"></i> جدول</button>
+                <button class="subnav-btn" onclick="switchLeagueSubTab('historySub', this)"><i class="fa-solid fa-book-bookmark"></i> تاریخچه</button>
+                <button class="subnav-btn" onclick="switchLeagueSubTab('honorsSub', this)"><i class="fa-solid fa-award"></i> افتخارات</button>
+                <button class="subnav-btn" onclick="switchLeagueSubTab('cupSub', this)"><i class="fa-solid fa-trophy"></i> جام حذفی</button>
+                <button class="subnav-btn" onclick="switchLeagueSubTab('rulesSub', this)"><i class="fa-solid fa-scale-balanced"></i> قوانین</button>
+                <button class="subnav-btn" onclick="switchLeagueSubTab('statsSub', this)"><i class="fa-solid fa-chart-line"></i> بهترین‌ها</button>
+            </div>
+
+            <!-- ۱. جدول لیگ -->
+            <div class="league-sub-content active" id="standingsSub">
+                <div class="sub-card">
+                    <div class="card-header-flex">
+                        <h3><i class="fa-solid fa-ranking-star text-warning"></i> جدول رده‌بندی لیگ FVL</h3>
+                        <button class="btn-action btn-coach admin-only" onclick="toggleEditStandings()" style="display: none;">ویرایش جدول</button>
+                    </div>
+
+                    <!-- فرم ویرایش جدول ادمین -->
+                    <div id="standingsEditForm" class="admin-form-block" style="display: none; margin-bottom: 20px;">
+                        <h4>ویرایش آمار تیم‌ها</h4>
+                        <div id="standingsInputsContainer"></div>
+                        <button class="btn-action btn-buy" onclick="saveStandings()" style="margin-top: 10px;">ذخیره تغییرات جدول</button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="luxury-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>تیم</th>
+                                    <th>بازی</th>
+                                    <th>برد</th>
+                                    <th>مساوی</th>
+                                    <th>باخت</th>
+                                    <th>گ.زد</th>
+                                    <th>گ.خورد</th>
+                                    <th>تفاضل</th>
+                                    <th>امتیاز</th>
+                                </tr>
+                            </thead>
+                            <tbody id="standingsTbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ۲. تاریخچه لیگ -->
+            <div class="league-sub-content" id="historySub">
+                <div class="sub-card">
+                    <h3><i class="fa-solid fa-monument text-warning"></i> تاریخچه لیگ FVL</h3>
+                    
+                    <div class="admin-form-block admin-only" style="display: none; margin-top: 15px;">
+                        <textarea id="historyInput" rows="3" placeholder="متن رویداد یا تاریخچه جدید..." style="width: 100%; border-radius: 8px; padding: 8px;"></textarea>
+                        <button class="btn-action btn-buy" onclick="saveHistory()" style="margin-top: 8px;">افزودن به تاریخچه</button>
+                    </div>
+
+                    <div class="text-feed" id="historyFeed"></div>
+                </div>
+            </div>
+
+            <!-- ۳. افتخارات -->
+            <div class="league-sub-content" id="honorsSub">
+                <div class="sub-card">
+                    <h3><i class="fa-solid fa-crown text-warning"></i> تالار افتخارات</h3>
+                    
+                    <div class="admin-form-block admin-only" style="display: none; margin-top: 15px;">
+                        <div class="news-form-group">
+                            <input type="text" id="honorTitleInput" placeholder="عنوان افتخار (مثلاً: قهرمان فصل ۱)">
+                            <input type="text" id="honorDescInput" placeholder="توضیحات کوتاه...">
+                        </div>
+                        <input type="file" id="honorImageInput" accept="image/*" style="margin-top: 8px;">
+                        <button class="btn-action btn-buy" onclick="saveHonor()" style="margin-top: 8px;">ثبت افتخار</button>
+                    </div>
+
+                    <div class="honors-grid" id="honorsFeed"></div>
+                </div>
+            </div>
+
+            <!-- ۴. جام حذفی -->
+            <div class="league-sub-content" id="cupSub">
+                <div class="sub-card">
+                    <h3><i class="fa-solid fa-trophy text-warning"></i> نمودار جام حذفی</h3>
+
+                    <div class="admin-form-block admin-only" style="display: none; margin-top: 15px; margin-bottom: 15px;">
+                        <div class="cup-inputs-grid">
+                            <div>نیمه‌نهایی ۱: <select id="cupSemi1_1"></select> vs <select id="cupSemi1_2"></select></div>
+                            <div>نیمه‌نهایی ۲: <select id="cupSemi2_1"></select> vs <select id="cupSemi2_2"></select></div>
+                            <div>فینال: <select id="cupFinal_1"></select> vs <select id="cupFinal_2"></select></div>
+                            <div>🏆 قهرمان: <select id="cupWinner"></select></div>
+                        </div>
+                        <button class="btn-action btn-buy" onclick="saveCupData()" style="margin-top: 10px;">به‌روزرسانی جام حذفی</button>
+                    </div>
+
+                    <div class="bracket-wrapper">
+                        <div class="bracket-column">
+                            <div class="bracket-title">نیمه‌نهایی</div>
+                            <div class="matchup"><span id="b_s1_1">؟</span> - <span id="b_s1_2">؟</span></div>
+                            <div class="matchup"><span id="b_s2_1">؟</span> - <span id="b_s2_2">؟</span></div>
+                        </div>
+                        <div class="bracket-column">
+                            <div class="bracket-title">فینال</div>
+                            <div class="matchup final-match"><span id="b_f_1">؟</span> - <span id="b_f_2">؟</span></div>
+                        </div>
+                        <div class="bracket-column">
+                            <div class="bracket-title">قهرمان</div>
+                            <div class="matchup trophy-match">🏆 <span id="b_winner">؟</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ۵. قوانین -->
+            <div class="league-sub-content" id="rulesSub">
+                <div class="sub-card">
+                    <h3><i class="fa-solid fa-gavel text-warning"></i> قوانین و مقررات لیگ</h3>
+
+                    <div class="admin-form-block admin-only" style="display: none; margin-top: 15px;">
+                        <textarea id="rulesInput" rows="3" placeholder="قانون جدید را بنویسید..." style="width: 100%; border-radius: 8px; padding: 8px;"></textarea>
+                        <button class="btn-action btn-buy" onclick="saveRule()" style="margin-top: 8px;">افزودن قانون</button>
+                    </div>
+
+                    <div class="text-feed" id="rulesFeed"></div>
+                </div>
+            </div>
+
+            <!-- ۶. بهترین‌ها -->
+            <div class="league-sub-content" id="statsSub">
+                <div class="sub-card">
+                    <div class="card-header-flex">
+                        <h3><i class="fa-solid fa-star text-warning"></i> برترین بازیکنان لیگ</h3>
+                        <button class="btn-action btn-coach admin-only" onclick="toggleEditStats()" style="display: none;">مدیریت آمار</button>
+                    </div>
+
+                    <div id="statsEditForm" class="admin-form-block" style="display: none; margin-bottom: 20px;">
+                        <div class="stats-form-grid">
+                            <select id="statTypeSelect">
+                                <option value="goals">گلزنان</option>
+                                <option value="assists">پاس گل‌دهندگان</option>
+                                <option value="cleansheets">کلین‌شیت‌ها</option>
+                            </select>
+                            <input type="text" id="statPlayerInput" placeholder="نام بازیکن">
+                            <select id="statTeamSelect"></select>
+                            <input type="number" id="statCountInput" placeholder="تعداد" min="1" style="width: 80px;">
+                            <button class="btn-action btn-buy" onclick="addTopStat()">افزودن</button>
+                        </div>
+                    </div>
+
+                    <div class="stats-tables-grid">
+                        <div class="mini-table-box">
+                            <h4>⚽ آقای گل</h4>
+                            <table class="luxury-table mini">
+                                <thead><tr><th>#</th><th>بازیکن</th><th>تیم</th><th>گل</th></tr></thead>
+                                <tbody id="goalsTbody"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="mini-table-box">
+                            <h4>🎯 پاس گل</h4>
+                            <table class="luxury-table mini">
+                                <thead><tr><th>#</th><th>بازیکن</th><th>تیم</th><th>پاس</th></tr></thead>
+                                <tbody id="assistsTbody"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="mini-table-box">
+                            <h4>🧤 کلین شیت</h4>
+                            <table class="luxury-table mini">
+                                <thead><tr><th>#</th><th>بازیکن</th><th>تیم</th><th>CS</th></tr></thead>
+                                <tbody id="cleansheetsTbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- LOGOUT MODAL -->
+    <div class="modal" id="logoutModal">
+        <div class="modal-content">
+            <div class="modal-icon warning"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h3>خروج از حساب کاربری</h3>
+            <p style="font-size: 0.85rem; color: #8a99ad; margin-top: 8px;">آیا مطمئن هستید که می‌خواهید خارج شوید؟</p>
+            <div class="modal-btns">
+                <button class="btn-modal btn-confirm" onclick="confirmLogout()">بله، خروج</button>
+                <button class="btn-modal btn-cancel" onclick="closeLogoutModal()">انصراف</button>
+            </div>
+        </div>
+    </div>
+    <!-- SETTINGS MODAL -->
+<div class="modal" id="settingsModal">
+    <div class="modal-content settings-modal-content">
+        <div class="modal-header-flex">
+            <h3><i class="fa-solid fa-gear text-warning"></i> تنظیمات سیستم</h3>
+            <button class="btn-close-modal" onclick="closeSettingsModal()">&times;</button>
+        </div>
+        
+        <!-- بخش اختصاصی مدیریت بودجه توسط ادمین -->
+        <div class="admin-only" style="display: none; margin-top: 15px; text-align: right;">
+            <h4 style="margin-bottom: 10px; color: #00d2ff; font-size: 0.95rem;">
+                <i class="fa-solid fa-coins"></i> مدیریت بودجه تیم‌ها (ویژه ادمین)
+            </h4>
+            <div id="adminBudgetList" class="budget-manage-list"></div>
+        </div>
+
+        <!-- بخش عمومی تنظیمات برای کاربران عادی -->
+        <div class="user-settings-notice" style="margin-top: 15px; text-align: center; color: #8a99ad; font-size: 0.85rem;">
+            <p>تنظیمات حساب کاربری فعال است.</p>
+        </div>
+
+        <div class="modal-btns" style="margin-top: 20px;">
+            <button class="btn-modal btn-cancel" onclick="closeSettingsModal()">بستن</button>
+        </div>
+    </div>
+</div>
+
+    <!-- FOOTER NAVIGATION MENU -->
+    <nav class="footer-nav">
+        <a class="nav-item active" onclick="switchTab('homeSection', this)">
+            <i class="fa-solid fa-house"></i>
+            <span>خانه</span>
+        </a>
+        <a class="nav-item" onclick="switchTab('squadSection', this)">
+            <i class="fa-solid fa-shirt"></i>
+            <span>ترکيب</span>
+        </a>
+        <a class="nav-item" onclick="switchTab('transfersSection', this)">
+            <i class="fa-solid fa-right-left"></i>
+            <span>نقل‌و‌انتقالات</span>
+        </a>
+        <a class="nav-item" onclick="switchTab('newsSection', this)">
+            <i class="fa-solid fa-newspaper"></i>
+            <span>اخبار</span>
+        </a>
+        <a class="nav-item" onclick="switchTab('leagueSection', this)">
+            <i class="fa-solid fa-trophy"></i>
+            <span>لیگ</span>
+        </a>
+    </nav>
+
+    <!-- Custom JavaScript File -->
+    <script src="script.js"></script>
+</body>
+</html>
