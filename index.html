@@ -205,6 +205,33 @@
     <!-- MODULE 4: NEWS SECTION -->
     <main class="main-content page-section" id="newsSection">
         <div class="news-container">
+
+            <div id="conferenceCard" class="sub-card" style="display: none; margin-bottom: 20px; text-align: center; background: linear-gradient(135deg, rgba(79, 172, 254, 0.15), rgba(0, 85, 255, 0.1)); border: 1px solid var(--accent-color); padding: 20px; border-radius: 18px; backdrop-filter: blur(15px);">
+                <h3 style="margin-bottom: 8px; color: #fff; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fa-solid fa-microphone-lines text-warning"></i> سالن کنفرانس خبری و کل‌کل
+                </h3>
+                <p style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 15px; line-height: 1.5;">
+                    پرسش و پاسخ رسمی ادمین با مربیان و فضای کل‌کل و چت زنده لیگ!
+                </p>
+                <button class="btn-action btn-buy" onclick="window.location.href='conference.html'" style="padding: 10px 24px; font-size: 0.9rem; font-weight: bold; cursor: pointer;">
+                    <i class="fa-solid fa-door-open" style="margin-left: 6px;"></i> ورود به سالن کنفرانس
+                </button>
+            </div>
+
+            <!-- دکمه کنترلی مدیریت کنفرانس (فقط برای ادمین در پنل مدیریت اخبار نمایش داده می‌شود) -->
+            <div class="admin-news-panel admin-only" style="display: none;">
+                <div class="card-title">
+                    <i class="fa-solid fa-sliders text-warning"></i>
+                    <h3>مدیریت سالن کنفرانس (ویژه مدیریت)</h3>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button id="toggleConfBtn" class="btn-action" onclick="toggleConferenceStatus()" style="background: #22c55e; flex: 1;">
+                        فعال‌سازی سالن کنفرانس برای همه
+                    </button>
+                </div>
+            </div>
+
+            <!-- پنل مدیریت اخبار (مخصوص ادمین) -->
             <div class="admin-news-panel admin-only" style="display: none;">
                 <div class="card-title">
                     <i class="fa-solid fa-pen-to-square text-warning"></i>
@@ -221,20 +248,26 @@
                 </div>
                 <textarea id="newsContentInput" rows="4" placeholder="متن کامل خبر را بنویسید..."></textarea>
                 <div class="form-actions">
-                    <button class="btn-action btn-buy" onclick="saveNews()"><i class="fa-solid fa-paper-plane"></i>
-                        انتشار / ذخیره خبر</button>
-                    <button class="btn-action btn-cancel" id="btnCancelEdit" onclick="cancelNewsEdit()"
-                        style="display: none;">انصراف</button>
+                    <button class="btn-action btn-buy" onclick="saveNews()">
+                        <i class="fa-solid fa-paper-plane"></i> انتشار / ذخیره خبر
+                    </button>
+                    <button class="btn-action btn-cancel" id="btnCancelEdit" onclick="cancelNewsEdit()" style="display: none;">
+                        انصراف
+                    </button>
                 </div>
             </div>
 
+            <!-- تب‌های دسته‌بندی اخبار -->
             <div class="news-tabs">
                 <button class="news-tab-btn active" onclick="filterNews('all', this)">همه اخبار</button>
                 <button class="news-tab-btn" onclick="filterNews('havashi', this)">🔥 حواشی</button>
                 <button class="news-tab-btn" onclick="filterNews('leaguenameh', this)">📜 لیگ‌نامه</button>
                 <button class="news-tab-btn" onclick="filterNews('zarebin', this)">🔍 زیر ذره‌بین</button>
             </div>
+
+            <!-- محل نمایش لیست اخبار -->
             <div class="news-feed" id="newsFeed"></div>
+
         </div>
     </main>
 

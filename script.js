@@ -181,6 +181,7 @@ async function setupUserEnvironment() {
 
     // 🌟 دریافت و بارگذاری تمام اطلاعات بخش لیگ از فضای ابری (که خودش تمام جدول‌ها، بازی‌ها، جام حذفی و... را رندر می‌کند)
     await loadLeagueDataFromCloud();
+    await checkConferenceStatus();
 
     // رندر سایر بخش‌های مستقل (اخبار، نقل و انتقالات و بودجه)
     renderNewsFeed();
@@ -1256,3 +1257,58 @@ document.addEventListener('DOMContentLoaded', () => {
     checkSession();
     fetchAndRenderTransferRequests(); // فراخوانی آنلاین درخواست‌ها
 });
+// ۱. بررسی وضعیت کنفرانس هنگام بارگذاری صفحه
+async function checkConferenceStatus() {
+    const { data, error } = await _supabase
+        .from('league_data')
+        .select('value')
+        .eq('key', 'conference_active')
+        .maybeSingle();
+
+    const isActive = data ? data.value : false;
+    const confCard = document.getElementById('conferenceCard');
+    const toggleBtn = document.getElementById('toggleConfBtn');
+
+    if (confCard) {
+        confCard.style.display = isActive ? 'block' : 'none';
+    }
+
+    if (toggleBtn) {
+        if (isActive) {
+            toggleBtn.textContent = '🔒 بستن و غیرفعال کردن سالن کنفرانس';
+            toggleBtn.style.background = '#ef4444'; // قرمز
+        } else {
+            toggleBtn.textContent = '🔓 فعال‌سازی سالن کنفرانس برای همه';
+            toggleBtn.style.background = '#22c55e'; // سبز
+        }
+    }
+}
+
+// ۲. تغییر وضعیت کنفرانس توسط ادمین
+async function toggleConferenceStatus() {
+    if (currentUser !== 'admin') return;
+
+    // خواندن وضعیت فعلی
+    const { data } = await _supabase
+        .from('league_data')
+        .select('value')
+        .eq('key', 'conference_active')
+        .maybeSingle();
+
+    const currentState = data ? data.value : false;
+    const newState = !currentState;
+
+    // آپدیت در دیتابیس
+    const { error } = await _supabase
+        .from('league_data')
+        .update({ value: newState })
+        .eq('key', 'conference_active');
+
+    if (error) {
+        alert('خطا در تغییر وضعیت کنفرانس');
+        return;
+    }
+
+    checkConferenceStatus();
+    alert(newState ? 'سالن کنفرانس برای همه مربیان فعال شد.' : 'سالن کنفرانس بسته شد.');
+}

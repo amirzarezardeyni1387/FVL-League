@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>کنفرانس خبری و کل‌کل - FVL League</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- کتابخانه Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body data-theme="mancity" style="margin: 0; padding: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column;">
+    
+    <header class="header" style="flex-shrink: 0;">
+        <div class="header-right">
+            <button class="btn-icon" onclick="window.location.href='index.html'" title="بازگشت به صفحه اصلی">
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+            <h2 style="font-size: 1.1rem; color: #fff; margin: 0;">🎤 کنفرانس خبری و کل‌کل مربیان</h2>
+        </div>
+        <div class="header-left">
+            <span id="conferenceUserRole" style="font-size: 0.85rem; color: #ffd700; font-weight: bold;"></span>
+        </div>
+    </header>
+
+    <main style="flex: 1; display: flex; justify-content: center; align-items: center; padding: 15px; overflow: hidden; width: 100%; box-sizing: border-box;">
+        <div class="conference-container" style="width: 100%; max-width: 800px; height: 100%; display: flex; flex-direction: column; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; overflow: hidden; backdrop-filter: blur(15px); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            
+            <!-- هدر داخلی چت (دکمه رفرش و پاکسازی ادمین) -->
+            <div style="padding: 12px 20px; background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--card-border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; flex-wrap: wrap; gap: 8px;">
+                <span style="font-size: 0.85rem; color: #8a99ad; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-circle" style="font-size: 0.5rem; color: #2ecc71;"></i> چت آنلاین و زنده
+                </span>
+                
+                <div style="display: flex; gap: 8px;">
+                    <!-- دکمه پاکسازی کلی (فقط برای ادمین نمایش داده می‌شود) -->
+                    <button id="clearBtn" onclick="clearAllMessages()" style="display: none; background: rgba(231, 76, 60, 0.2); border: 1px solid #e74c3c; color: #e74c3c; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; transition: 0.2s;">
+                        <i class="fa-solid fa-trash-can"></i> پاکسازی کل کنفرانس
+                    </button>
+                    
+                    <button onclick="fetchMessages()" class="btn-refresh" style="background: rgba(255, 255, 255, 0.1); border: none; color: #fff; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; transition: 0.2s;">
+                        <i class="fa-solid fa-rotate-right"></i> بروزرسانی
+                    </button>
+                </div>
+            </div>
+
+            <!-- باکس پیام‌ها -->
+            <div id="chatMessages" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth;">
+                <!-- پیام‌ها به صورت پویا اینجا لود می‌شوند -->
+            </div>
+
+            <!-- فرم ارسال پیام -->
+            <div style="padding: 15px 20px; background: rgba(0,0,0,0.4); border-top: 1px solid var(--card-border); display: flex; gap: 10px; align-items: center; flex-shrink: 0;">
+                <textarea id="inputMessage" placeholder="پیام خود یا کل‌کل را بنویسید..." rows="1" style="flex: 1; padding: 12px 15px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; color: #fff; outline: none; font-family: inherit; resize: none; overflow-y: auto; max-height: 100px; line-height: 1.4;" onkeydown="handleKeyDown(event)"></textarea>
+                <button class="btn-action btn-buy" onclick="sendConferenceMessage()" style="padding: 0 24px; height: 46px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-paper-plane"></i> ارسال
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script src="conference.js"></script>
+</body>
+</html>
