@@ -15,7 +15,7 @@
     --bg-gradient: linear-gradient(135deg, #041021, #0f2b48);
     --accent-color: #6CABDD;
     --accent-glow: rgba(108, 171, 221, 0.6);
-    --team-logo: url('https://upload.wikimedia.org/wikipedia/en/7/7a/Manchester_City_FC_badge.svg');
+    --team-logo: url('image/Manchester_City.svg.webp');
 }
 
 [data-theme="realmadrid"] {
@@ -36,7 +36,7 @@
     --bg-gradient: linear-gradient(135deg, #050505, #1c1c1c);
     --accent-color: #ffffff;
     --accent-glow: rgba(255, 255, 255, 0.6);
-    --team-logo: url('https://upload.wikimedia.org/wikipedia/commons/b/bc/Juventus_FC_2017_icon_%28black%29.svg');
+    --team-logo: url('image/Juventus.svg.webp');
 }
 
 [data-theme="admin"] {
@@ -504,7 +504,7 @@ body {
     --bg-gradient: linear-gradient(135deg, #041021, #0f2b48);
     --accent-color: #6CABDD;
     --accent-glow: rgba(108, 171, 221, 0.6);
-    --team-logo: url('https://upload.wikimedia.org/wikipedia/en/7/7a/Manchester_City_FC_badge.svg');
+    --team-logo: url('https://thumb.wikimedia.org/wikipedia/fa/thumb/e/eb/Manchester_City_FC_badge.svg/960px-Manchester_City_FC_badge.svg.png?utm_source=fa.wikipedia.org&utm_campaign=imageinfo&utm_content=thumbnail');
 }
 
 [data-theme="realmadrid"] {
@@ -525,7 +525,7 @@ body {
     --bg-gradient: linear-gradient(135deg, #050505, #1c1c1c);
     --accent-color: #ffffff;
     --accent-glow: rgba(255, 255, 255, 0.6);
-    --team-logo: url('https://upload.wikimedia.org/wikipedia/commons/b/bc/Juventus_FC_2017_icon_%28black%29.svg');
+    --team-logo: url('https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ed/Juventus_FC_-_logo_black_%28Italy%2C_2020%29.svg/500px-Juventus_FC_-_logo_black_%28Italy%2C_2020%29.svg.png?utm_source=fa.wikipedia.org&utm_campaign=imageinfo&utm_content=thumbnail');
 }
 
 [data-theme="admin"] {
@@ -1351,6 +1351,188 @@ body {
 .btn-confirm { background: #e74c3c; color: #fff; }
 .btn-cancel { background: rgba(255, 255, 255, 0.1); color: #fff; }
 
+/* استایل‌های دکمه‌های تایید و رد و وضعیت درخواست‌ها */
+.req-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-status-approve {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    border: none;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: bold;
+    transition: 0.2s ease;
+}
+
+.btn-status-approve:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4);
+}
+
+.btn-status-reject {
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    border: none;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: bold;
+    transition: 0.2s ease;
+}
+
+.btn-status-reject:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4);
+}
+
+.btn-status-delete {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ff4d4d;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: 0.2s ease;
+}
+
+.btn-status-delete:hover {
+    background: #e74c3c;
+    color: #fff;
+}
+
+.status-badge {
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.status-badge.approved {
+    background: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+    border: 1px solid #2ecc71;
+}
+
+.status-badge.rejected {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+}
+
+.status-badge.pending {
+    background: rgba(241, 196, 15, 0.2);
+    color: #f1c40f;
+    border: 1px solid #f1c40f;
+}
+.btn-direct {
+    background: linear-gradient(135deg, #f39c12, #d35400);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-direct:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.empty-inbox-msg {
+    text-align: center;
+    color: #8a99ad;
+    padding: 20px 0;
+    font-size: 0.95rem;
+}
+
+/* استایل عملیات مدیریت ادمین */
+.req-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-status-approve {
+    background: #27ae60;
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.btn-status-approve:hover {
+    background: #219150;
+}
+
+.btn-status-reject {
+    background: #c0392b;
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.btn-status-reject:hover {
+    background: #a93226;
+}
+
+.btn-status-delete {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: 0.2s;
+}
+
+.btn-status-delete:hover {
+    background: #e74c3c;
+    color: #fff;
+}
+
+/* استایل لیبل وضعیت (برای کاربران و ادمین) */
+.status-badge {
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.status-badge.pending {
+    background: #d39e00;
+    color: #fff;
+}
+
+.status-badge.approved {
+    background: #2ecc71;
+    color: #fff;
+}
+
+.status-badge.rejected {
+    background: #e74c3c;
+    color: #fff;
+}
 /* ==========================================
    NEWS SECTION STYLES
    ========================================== */

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,8 +10,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body data-theme="mancity">
+    
 
     <!-- BACKGROUND ANIMATED LIGHTS -->
     <div class="light-bg-container">
@@ -25,23 +30,23 @@
         <div class="login-card">
             <div class="fvl-badge-small">FVL</div>
             <h2 class="login-title">ورود به لیگ FVL</h2>
-            
+
             <div class="input-group">
                 <i class="fa-solid fa-user"></i>
                 <input type="text" id="username" placeholder="نام کاربری (مثلاً: mancity یا admin)">
             </div>
-            
+
             <div class="input-group">
                 <i class="fa-solid fa-lock"></i>
                 <input type="password" id="password" placeholder="رمز عبور">
             </div>
-            
+
             <button class="btn-login" onclick="handleLogin()">ورود به حساب</button>
             <p class="login-error" id="loginError">نام کاربری یا رمز عبور اشتباه است!</p>
         </div>
     </div>
 
-    <!-- MAIN HEADER -->
+    <!-- MAIN HEADER --><!-- MAIN HEADER -->
     <header class="header">
         <div class="header-right">
             <div class="budget-box">
@@ -51,12 +56,12 @@
             <div class="team-badge" id="teamBadge"></div>
         </div>
 
-        <!-- در بخش header-left -->
-    <button class="btn-icon" title="تنظیمات" onclick="openSettingsModal()"><i class="fa-solid fa-gear"></i></button>
-    <button class="btn-icon btn-logout" onclick="openLogoutModal()" title="خروج از حساب">
-        <i class="fa-solid fa-right-from-bracket"></i>
-    </button>
-</div>
+        <div class="header-left">
+            <button class="btn-icon" title="تنظیمات" onclick="openSettingsModal()"><i class="fa-solid fa-gear"></i></button>
+            <button class="btn-icon btn-logout" onclick="openLogoutModal()" title="خروج از حساب">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
     </header>
 
     <!-- MODULE 1: HOME SECTION -->
@@ -91,14 +96,18 @@
                 </div>
                 <div class="upload-wrapper">
                     <div class="upload-card" onclick="document.getElementById('squadImageInput').click()">
-                        <input type="file" id="squadImageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event, 'squadPreview', 'squadPlaceholder', 'squadResetBtn')">
+                        <input type="file" id="squadImageInput" accept="image/*" style="display: none;"
+                            onchange="handleImageUpload(event, 'squadPreview', 'squadPlaceholder', 'squadResetBtn')">
                         <div class="upload-placeholder" id="squadPlaceholder">
                             <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
                             <p class="upload-text">برای انتخاب عکس ترکیب کلیک کنید یا عکس را اینجا رها کنید</p>
                         </div>
-                        <img id="squadPreview" class="image-preview" src="" alt="پیش‌نمایش ترکیب" style="display: none;">
+                        <img id="squadPreview" class="image-preview" src="" alt="پیش‌نمایش ترکیب"
+                            style="display: none;">
                     </div>
-                    <button class="btn-login btn-upload-reset" id="squadResetBtn" onclick="resetImageUpload('squadImageInput', 'squadPreview', 'squadPlaceholder', 'squadResetBtn')" style="display: none; margin-top: 10px;">
+                    <button class="btn-login btn-upload-reset" id="squadResetBtn"
+                        onclick="resetImageUpload('squadImageInput', 'squadPreview', 'squadPlaceholder', 'squadResetBtn')"
+                        style="display: none; margin-top: 10px;">
                         <i class="fa-solid fa-trash"></i> حذف عکس ترکیب
                     </button>
                 </div>
@@ -110,14 +119,18 @@
                 </div>
                 <div class="upload-wrapper">
                     <div class="upload-card" onclick="document.getElementById('tacticImageInput').click()">
-                        <input type="file" id="tacticImageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event, 'tacticPreview', 'tacticPlaceholder', 'tacticResetBtn')">
+                        <input type="file" id="tacticImageInput" accept="image/*" style="display: none;"
+                            onchange="handleImageUpload(event, 'tacticPreview', 'tacticPlaceholder', 'tacticResetBtn')">
                         <div class="upload-placeholder" id="tacticPlaceholder">
                             <i class="fa-solid fa-sliders upload-icon"></i>
                             <p class="upload-text">برای انتخاب عکس تاکتیک کلیک کنید یا عکس را اینجا رها کنید</p>
                         </div>
-                        <img id="tacticPreview" class="image-preview" src="" alt="پیش‌نمایش تاکتیک" style="display: none;">
+                        <img id="tacticPreview" class="image-preview" src="" alt="پیش‌نمایش تاکتیک"
+                            style="display: none;">
                     </div>
-                    <button class="btn-login btn-upload-reset" id="tacticResetBtn" onclick="resetImageUpload('tacticImageInput', 'tacticPreview', 'tacticPlaceholder', 'tacticResetBtn')" style="display: none; margin-top: 10px;">
+                    <button class="btn-login btn-upload-reset" id="tacticResetBtn"
+                        onclick="resetImageUpload('tacticImageInput', 'tacticPreview', 'tacticPlaceholder', 'tacticResetBtn')"
+                        style="display: none; margin-top: 10px;">
                         <i class="fa-solid fa-trash"></i> حذف عکس تاکتیک
                     </button>
                 </div>
@@ -128,50 +141,64 @@
     <!-- MODULE 3: TRANSFERS SECTION -->
     <main class="main-content page-section" id="transfersSection">
         <div class="transfers-container">
+
+            <!-- خرید بازیکن (درخواست عمومی) -->
             <div class="transfer-card">
                 <div class="card-title">
-                    <i class="fa-solid fa-cart-plus text-success"></i>
+                    <i class="fa-solid fa-shopping-cart text-success"></i>
                     <h3>خرید بازیکن (درخواست عمومی)</h3>
                 </div>
                 <div class="input-inline-group">
                     <input type="text" id="buyPlayerName" placeholder="نام بازیکن مورد نظر را وارد کنید...">
-                    <button class="btn-action btn-buy" onclick="submitRequest('buy')">ثبت درخواست خرید</button>
+                    <button class="btn-action btn-buy" onclick="submitTransferRequest('buy')">
+                        ثبت درخواست خرید
+                    </button>
                 </div>
             </div>
 
+            <!-- فروش بازیکن -->
             <div class="transfer-card">
                 <div class="card-title">
-                    <i class="fa-solid fa-hand-holding-dollar text-danger"></i>
+                    <i class="fa-solid fa-handshake text-danger"></i>
                     <h3>فروش بازیکن</h3>
                 </div>
                 <div class="input-inline-group">
-                    <input type="text" id="sellPlayerName" placeholder="نام بازیکن جهت فروش را وارد کنید...">
-                    <button class="btn-action btn-sell" onclick="submitRequest('sell')">ثبت برای فروش</button>
+                    <input type="text" id="sellPlayerName" placeholder="نام بازیکن جهت فروش را وارد کنید">
+                    <button class="btn-action btn-sell" onclick="submitTransferRequest('sell')">
+                        ثبت برای فروش
+                    </button>
                 </div>
             </div>
 
+            <!-- درخواست مستقیم به مربی -->
             <div class="transfer-card">
                 <div class="card-title">
                     <i class="fa-solid fa-user-tie text-warning"></i>
-                 
                     <h3>درخواست مستقیم به مربی</h3>
                 </div>
                 <div class="input-inline-group multi-input">
-                    <input type="text" id="coachPlayerName" placeholder="نام بازیکن...">
-                    <input type="number" id="coachOfferPrice" placeholder="قیمت پیشنهادی (میلیون)..." min="1">
-                    <button class="btn-action btn-coach" onclick="submitRequest('coach')">ارسال پیشنهاد</button>
+                    <input type="text" id="directPlayerName" placeholder="نام بازیکن...">
+                    <input type="number" id="directPrice" placeholder="قیمت پیشنهادی (میلیون)...">
+                    <button class="btn-action btn-direct" onclick="submitTransferRequest('direct')">
+                        ارسال پیشنهاد
+                    </button>
                 </div>
             </div>
 
+            <!-- صندوق درخواست‌ها (مشترک) -->
             <div class="requests-inbox-card">
                 <div class="inbox-header">
                     <h3><i class="fa-solid fa-inbox"></i> صندوق درخواست‌ها (مشترک)</h3>
-                    <button class="btn-refresh" onclick="renderRequests()"><i class="fa-solid fa-rotate-right"></i> بروزرسانی</button>
+                    <button class="btn-refresh" onclick="renderTransferRequests()">
+                        <i class="fa-solid fa-rotate-right"></i> بروزرسانی
+                    </button>
                 </div>
-                <div class="requests-list" id="requestsList"></div>
+                <div class="requests-list" id="requestsList">
+                    <p class="empty-inbox-msg">هیچ درخواستی ثبت نشده است.</p>
+                </div>
             </div>
+
         </div>
-    
     </main>
 
 
@@ -194,8 +221,10 @@
                 </div>
                 <textarea id="newsContentInput" rows="4" placeholder="متن کامل خبر را بنویسید..."></textarea>
                 <div class="form-actions">
-                    <button class="btn-action btn-buy" onclick="saveNews()"><i class="fa-solid fa-paper-plane"></i> انتشار / ذخیره خبر</button>
-                    <button class="btn-action btn-cancel" id="btnCancelEdit" onclick="cancelNewsEdit()" style="display: none;">انصراف</button>
+                    <button class="btn-action btn-buy" onclick="saveNews()"><i class="fa-solid fa-paper-plane"></i>
+                        انتشار / ذخیره خبر</button>
+                    <button class="btn-action btn-cancel" id="btnCancelEdit" onclick="cancelNewsEdit()"
+                        style="display: none;">انصراف</button>
                 </div>
             </div>
 
@@ -214,12 +243,21 @@
         <div class="league-container">
             <!-- زیرمنوی تب‌های لیگ -->
             <div class="subnav-tabs">
-                <button class="subnav-btn active" onclick="switchLeagueSubTab('standingsSub', this)"><i class="fa-solid fa-table-list"></i> جدول</button>
-                <button class="subnav-btn" onclick="switchLeagueSubTab('historySub', this)"><i class="fa-solid fa-book-bookmark"></i> تاریخچه</button>
-                <button class="subnav-btn" onclick="switchLeagueSubTab('honorsSub', this)"><i class="fa-solid fa-award"></i> افتخارات</button>
-                <button class="subnav-btn" onclick="switchLeagueSubTab('cupSub', this)"><i class="fa-solid fa-trophy"></i> جام حذفی</button>
-                <button class="subnav-btn" onclick="switchLeagueSubTab('rulesSub', this)"><i class="fa-solid fa-scale-balanced"></i> قوانین</button>
-                <button class="subnav-btn" onclick="switchLeagueSubTab('statsSub', this)"><i class="fa-solid fa-chart-line"></i> بهترین‌ها</button>
+                <button class="subnav-btn active" onclick="switchLeagueSubTab('standingsSub', this)"><i
+                        class="fa-solid fa-table-list"></i> جدول</button>
+                <!-- اضافه کردن دکمه تب بازی‌ها -->
+                <button class="subnav-btn" onclick="switchLeagueSubTab('fixturesSubTab', this)">
+                    <i class="fa-solid fa-gamepad"></i> بازی‌ها</button>
+                <button class="subnav-btn" onclick="switchLeagueSubTab('historySub', this)"><i
+                        class="fa-solid fa-book-bookmark"></i> تاریخچه</button>
+                <button class="subnav-btn" onclick="switchLeagueSubTab('honorsSub', this)"><i
+                        class="fa-solid fa-award"></i> افتخارات</button>
+                <button class="subnav-btn" onclick="switchLeagueSubTab('cupSub', this)"><i
+                        class="fa-solid fa-trophy"></i> جام حذفی</button>
+                <button class="subnav-btn" onclick="switchLeagueSubTab('rulesSub', this)"><i
+                        class="fa-solid fa-scale-balanced"></i> قوانین</button>
+                <button class="subnav-btn" onclick="switchLeagueSubTab('statsSub', this)"><i
+                        class="fa-solid fa-chart-line"></i> بهترین‌ها</button>
             </div>
 
             <!-- ۱. جدول لیگ -->
@@ -227,14 +265,16 @@
                 <div class="sub-card">
                     <div class="card-header-flex">
                         <h3><i class="fa-solid fa-ranking-star text-warning"></i> جدول رده‌بندی لیگ FVL</h3>
-                        <button class="btn-action btn-coach admin-only" onclick="toggleEditStandings()" style="display: none;">ویرایش جدول</button>
+                        <button class="btn-action btn-coach admin-only" onclick="toggleEditStandings()"
+                            style="display: none;">ویرایش جدول</button>
                     </div>
 
                     <!-- فرم ویرایش جدول ادمین -->
                     <div id="standingsEditForm" class="admin-form-block" style="display: none; margin-bottom: 20px;">
                         <h4>ویرایش آمار تیم‌ها</h4>
                         <div id="standingsInputsContainer"></div>
-                        <button class="btn-action btn-buy" onclick="saveStandings()" style="margin-top: 10px;">ذخیره تغییرات جدول</button>
+                        <button class="btn-action btn-buy" onclick="saveStandings()" style="margin-top: 10px;">ذخیره
+                            تغییرات جدول</button>
                     </div>
 
                     <div class="table-responsive">
@@ -258,15 +298,74 @@
                     </div>
                 </div>
             </div>
+            <!-- محتوای تب بازی‌های ۶ هفته -->
+            <div id="fixturesSubTab" class="league-sub-content">
+                <div class="sub-card"
+                    style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px; margin-top: 15px;">
+                    <div class="card-header-flex"
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #fff; font-size: 1.1rem;"><i class="fa-solid fa-calendar-alt"></i> برنامه و
+                            نتایج بازی‌های ۶ هفته</h3>
 
+                        <!-- دکمه مدیریت ویژه ادمین -->
+                        <button id="adminAddMatchBtn" onclick="toggleAdminMatchForm()"
+                            style="background: #4facfe; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; display: none;">
+                            <i class="fa-solid fa-plus"></i> مدیریت و افزودن بازی
+                        </button>
+                    </div>
+
+                    <!-- فرم افزودن بازی جدید (مخصوص ادمین) -->
+                    <div id="adminMatchFormCard"
+                        style="display: none; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid rgba(79, 172, 254, 0.3);">
+                        <h4 style="color: #4facfe; margin-bottom: 12px; font-size: 0.95rem;">افزودن مسابقه جدید به هفته
+                        </h4>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+
+                            <!-- انتخاب هفته -->
+                            <select id="matchWeekSelect"
+                                style="padding: 8px; background: #222; color: #fff; border: 1px solid #444; border-radius: 6px;">
+                                <option value="1">هفته ۱</option>
+                                <option value="2">هفته ۲</option>
+                                <option value="3">هفته ۳</option>
+                                <option value="4">هفته ۴</option>
+                                <option value="5">هفته ۵</option>
+                                <option value="6">هفته ۶</option>
+                            </select>
+
+                            <!-- انتخاب تیم میزبان -->
+                            <select id="homeTeamSelect"
+                                style="padding: 8px; background: #222; color: #fff; border: 1px solid #444; border-radius: 6px; flex: 1;">
+                                <option value="">انتخاب تیم میزبان...</option>
+                            </select>
+
+                            <span style="color: #8a99ad;">مقابل</span>
+
+                            <!-- انتخاب تیم میهمان -->
+                            <select id="awayTeamSelect"
+                                style="padding: 8px; background: #222; color: #fff; border: 1px solid #444; border-radius: 6px; flex: 1;">
+                                <option value="">انتخاب تیم میهمان...</option>
+                            </select>
+
+                            <button onclick="addNewMatch()"
+                                style="background: #22c55e; color: #fff; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                                ثبت بازی
+                            </button>
+                        </div>
+                    </div>
+                    <!-- محل رندر شدن بازی‌ها -->
+                    <div id="fixturesContainer"></div>
+                </div>
+            </div>
             <!-- ۲. تاریخچه لیگ -->
             <div class="league-sub-content" id="historySub">
                 <div class="sub-card">
                     <h3><i class="fa-solid fa-monument text-warning"></i> تاریخچه لیگ FVL</h3>
-                    
+
                     <div class="admin-form-block admin-only" style="display: none; margin-top: 15px;">
-                        <textarea id="historyInput" rows="3" placeholder="متن رویداد یا تاریخچه جدید..." style="width: 100%; border-radius: 8px; padding: 8px;"></textarea>
-                        <button class="btn-action btn-buy" onclick="saveHistory()" style="margin-top: 8px;">افزودن به تاریخچه</button>
+                        <textarea id="historyInput" rows="3" placeholder="متن رویداد یا تاریخچه جدید..."
+                            style="width: 100%; border-radius: 8px; padding: 8px;"></textarea>
+                        <button class="btn-action btn-buy" onclick="saveHistory()" style="margin-top: 8px;">افزودن به
+                            تاریخچه</button>
                     </div>
 
                     <div class="text-feed" id="historyFeed"></div>
@@ -277,14 +376,15 @@
             <div class="league-sub-content" id="honorsSub">
                 <div class="sub-card">
                     <h3><i class="fa-solid fa-crown text-warning"></i> تالار افتخارات</h3>
-                    
+
                     <div class="admin-form-block admin-only" style="display: none; margin-top: 15px;">
                         <div class="news-form-group">
                             <input type="text" id="honorTitleInput" placeholder="عنوان افتخار (مثلاً: قهرمان فصل ۱)">
                             <input type="text" id="honorDescInput" placeholder="توضیحات کوتاه...">
                         </div>
                         <input type="file" id="honorImageInput" accept="image/*" style="margin-top: 8px;">
-                        <button class="btn-action btn-buy" onclick="saveHonor()" style="margin-top: 8px;">ثبت افتخار</button>
+                        <button class="btn-action btn-buy" onclick="saveHonor()" style="margin-top: 8px;">ثبت
+                            افتخار</button>
                     </div>
 
                     <div class="honors-grid" id="honorsFeed"></div>
@@ -296,14 +396,18 @@
                 <div class="sub-card">
                     <h3><i class="fa-solid fa-trophy text-warning"></i> نمودار جام حذفی</h3>
 
-                    <div class="admin-form-block admin-only" style="display: none; margin-top: 15px; margin-bottom: 15px;">
+                    <div class="admin-form-block admin-only"
+                        style="display: none; margin-top: 15px; margin-bottom: 15px;">
                         <div class="cup-inputs-grid">
-                            <div>نیمه‌نهایی ۱: <select id="cupSemi1_1"></select> vs <select id="cupSemi1_2"></select></div>
-                            <div>نیمه‌نهایی ۲: <select id="cupSemi2_1"></select> vs <select id="cupSemi2_2"></select></div>
+                            <div>نیمه‌نهایی ۱: <select id="cupSemi1_1"></select> vs <select id="cupSemi1_2"></select>
+                            </div>
+                            <div>نیمه‌نهایی ۲: <select id="cupSemi2_1"></select> vs <select id="cupSemi2_2"></select>
+                            </div>
                             <div>فینال: <select id="cupFinal_1"></select> vs <select id="cupFinal_2"></select></div>
                             <div>🏆 قهرمان: <select id="cupWinner"></select></div>
                         </div>
-                        <button class="btn-action btn-buy" onclick="saveCupData()" style="margin-top: 10px;">به‌روزرسانی جام حذفی</button>
+                        <button class="btn-action btn-buy" onclick="saveCupData()" style="margin-top: 10px;">به‌روزرسانی
+                            جام حذفی</button>
                     </div>
 
                     <div class="bracket-wrapper">
@@ -330,8 +434,10 @@
                     <h3><i class="fa-solid fa-gavel text-warning"></i> قوانین و مقررات لیگ</h3>
 
                     <div class="admin-form-block admin-only" style="display: none; margin-top: 15px;">
-                        <textarea id="rulesInput" rows="3" placeholder="قانون جدید را بنویسید..." style="width: 100%; border-radius: 8px; padding: 8px;"></textarea>
-                        <button class="btn-action btn-buy" onclick="saveRule()" style="margin-top: 8px;">افزودن قانون</button>
+                        <textarea id="rulesInput" rows="3" placeholder="قانون جدید را بنویسید..."
+                            style="width: 100%; border-radius: 8px; padding: 8px;"></textarea>
+                        <button class="btn-action btn-buy" onclick="saveRule()" style="margin-top: 8px;">افزودن
+                            قانون</button>
                     </div>
 
                     <div class="text-feed" id="rulesFeed"></div>
@@ -343,7 +449,8 @@
                 <div class="sub-card">
                     <div class="card-header-flex">
                         <h3><i class="fa-solid fa-star text-warning"></i> برترین بازیکنان لیگ</h3>
-                        <button class="btn-action btn-coach admin-only" onclick="toggleEditStats()" style="display: none;">مدیریت آمار</button>
+                        <button class="btn-action btn-coach admin-only" onclick="toggleEditStats()"
+                            style="display: none;">مدیریت آمار</button>
                     </div>
 
                     <div id="statsEditForm" class="admin-form-block" style="display: none; margin-bottom: 20px;">
@@ -364,7 +471,14 @@
                         <div class="mini-table-box">
                             <h4>⚽ آقای گل</h4>
                             <table class="luxury-table mini">
-                                <thead><tr><th>#</th><th>بازیکن</th><th>تیم</th><th>گل</th></tr></thead>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>بازیکن</th>
+                                        <th>تیم</th>
+                                        <th>گل</th>
+                                    </tr>
+                                </thead>
                                 <tbody id="goalsTbody"></tbody>
                             </table>
                         </div>
@@ -372,7 +486,14 @@
                         <div class="mini-table-box">
                             <h4>🎯 پاس گل</h4>
                             <table class="luxury-table mini">
-                                <thead><tr><th>#</th><th>بازیکن</th><th>تیم</th><th>پاس</th></tr></thead>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>بازیکن</th>
+                                        <th>تیم</th>
+                                        <th>پاس</th>
+                                    </tr>
+                                </thead>
                                 <tbody id="assistsTbody"></tbody>
                             </table>
                         </div>
@@ -380,7 +501,14 @@
                         <div class="mini-table-box">
                             <h4>🧤 کلین شیت</h4>
                             <table class="luxury-table mini">
-                                <thead><tr><th>#</th><th>بازیکن</th><th>تیم</th><th>CS</th></tr></thead>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>بازیکن</th>
+                                        <th>تیم</th>
+                                        <th>CS</th>
+                                    </tr>
+                                </thead>
                                 <tbody id="cleansheetsTbody"></tbody>
                             </table>
                         </div>
@@ -403,31 +531,32 @@
         </div>
     </div>
     <!-- SETTINGS MODAL -->
-<div class="modal" id="settingsModal">
-    <div class="modal-content settings-modal-content">
-        <div class="modal-header-flex">
-            <h3><i class="fa-solid fa-gear text-warning"></i> تنظیمات سیستم</h3>
-            <button class="btn-close-modal" onclick="closeSettingsModal()">&times;</button>
-        </div>
-        
-        <!-- بخش اختصاصی مدیریت بودجه توسط ادمین -->
-        <div class="admin-only" style="display: none; margin-top: 15px; text-align: right;">
-            <h4 style="margin-bottom: 10px; color: #00d2ff; font-size: 0.95rem;">
-                <i class="fa-solid fa-coins"></i> مدیریت بودجه تیم‌ها (ویژه ادمین)
-            </h4>
-            <div id="adminBudgetList" class="budget-manage-list"></div>
-        </div>
+    <div class="modal" id="settingsModal">
+        <div class="modal-content settings-modal-content">
+            <div class="modal-header-flex">
+                <h3><i class="fa-solid fa-gear text-warning"></i> تنظیمات سیستم</h3>
+                <button class="btn-close-modal" onclick="closeSettingsModal()">&times;</button>
+            </div>
 
-        <!-- بخش عمومی تنظیمات برای کاربران عادی -->
-        <div class="user-settings-notice" style="margin-top: 15px; text-align: center; color: #8a99ad; font-size: 0.85rem;">
-            <p>تنظیمات حساب کاربری فعال است.</p>
-        </div>
+            <!-- بخش اختصاصی مدیریت بودجه توسط ادمین -->
+            <div class="admin-only" style="display: none; margin-top: 15px; text-align: right;">
+                <h4 style="margin-bottom: 10px; color: #00d2ff; font-size: 0.95rem;">
+                    <i class="fa-solid fa-coins"></i> مدیریت بودجه تیم‌ها (ویژه ادمین)
+                </h4>
+                <div id="adminBudgetList" class="budget-manage-list"></div>
+            </div>
 
-        <div class="modal-btns" style="margin-top: 20px;">
-            <button class="btn-modal btn-cancel" onclick="closeSettingsModal()">بستن</button>
+            <!-- بخش عمومی تنظیمات برای کاربران عادی -->
+            <div class="user-settings-notice"
+                style="margin-top: 15px; text-align: center; color: #8a99ad; font-size: 0.85rem;">
+                <p>تنظیمات حساب کاربری فعال است.</p>
+            </div>
+
+            <div class="modal-btns" style="margin-top: 20px;">
+                <button class="btn-modal btn-cancel" onclick="closeSettingsModal()">بستن</button>
+            </div>
         </div>
     </div>
-</div>
 
     <!-- FOOTER NAVIGATION MENU -->
     <nav class="footer-nav">
@@ -456,4 +585,5 @@
     <!-- Custom JavaScript File -->
     <script src="script.js"></script>
 </body>
+
 </html>

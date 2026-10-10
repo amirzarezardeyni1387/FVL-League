@@ -2,6 +2,12 @@
    FVL VIRTUAL LEAGUE - COMPLETE SCRIPT
    ========================================================================== */
 
+
+const SUPABASE_URL = 'https://lmaswbdjbgruzrgphocx.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_mUOxsInUn6bUUQWj3myuGA_AO5TB_Cq';
+
+// ساخت کلاینت ارتباطی
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // --- GLOBAL STATE ---
 let currentUser = null; // مشخص‌کننده کاربر جاری
 let newsData = [];
@@ -25,19 +31,28 @@ const TEAMS_LIST = [
     { id: 'psg', name: 'پاری سن ژرمن', budget: 3000 },
     { id: 'juventus', name: 'یوونتوس', budget: 3000 }
 ];
+// خواندن بودجه‌ها از دیتابیس ابری Supabase
+async function getTeamBudgets() {
+    const { data, error } = await _supabase
+        .from('team_budgets')
+        .select('*');
 
-function getTeamBudgets() {
-    const saved = localStorage.getItem('fvl_team_budgets');
-    if (saved) return JSON.parse(saved);
-    
-    // در صورت عدم وجود، مقادیر پیش‌فرض ایجاد می‌شود
-    const initial = {};
-    TEAMS_LIST.forEach(t => initial[t.id] = t.budget);
-    localStorage.setItem('fvl_team_budgets', JSON.stringify(initial));
-    return initial;
+    if (error) {
+        console.error('خطا در خواندن بودجه‌ها:', error);
+        return {};
+    }
+
+    const budgetsObj = {};
+    if (data) {
+        data.forEach(item => {
+            budgetsObj[item.id] = item.budget;
+        });
+    }
+    return budgetsObj;
 }
 
-function saveTeamBudget(teamId) {
+// ذخیره یا بروزرسانی بودجه تیم توسط ادمین در دیتابیس
+async function saveTeamBudget(teamId) {
     const inputEl = document.getElementById(`budget_input_${teamId}`);
     if (!inputEl) return;
 
@@ -47,25 +62,34 @@ function saveTeamBudget(teamId) {
         return;
     }
 
-    const budgets = getTeamBudgets();
-    budgets[teamId] = newBudget;
-    localStorage.setItem('fvl_team_budgets', JSON.stringify(budgets));
-    
-    alert('بودجه تیم با موفقیت بروزرسانی شد.');
+    // آپدیت در جدول Supabase
+    const { error } = await _supabase
+        .from('team_budgets')
+        .update({ budget: newBudget })
+        .eq('id', teamId);
+
+    if (error) {
+        console.error('خطا در بروزرسانی بودجه:', error);
+        alert('خطا در ارتباط با سرور برای ثبت بودجه');
+        return;
+    }
+
+    alert('بودجه تیم با موفقیت در فضای ابری بروزرسانی شد.');
     updateBudgetDisplay();
 }
-// نمایش بودجه در بالای صفحه و بخش تنظیمات ادمین
-function updateBudgetDisplay() {
-    const budgets = getTeamBudgets();
+
+// نمایش بودجه در بالای صفحه و بخش تنظیمات ادمین به صورت آنلاین
+async function updateBudgetDisplay() {
+    const budgets = await getTeamBudgets();
 
     // ۱. بروزرسانی مقدار نشان داده شده در بالای صفحه (برای تیم لاگین شده)
     const currentTeamBudget = budgets[currentUser] || 0;
-    const topBudgetEl = document.getElementById('userBudgetDisplay'); // آیدی المان سکه/بودجه در بالای صفحه
+    const topBudgetEl = document.getElementById('userBudgetDisplay');
     if (topBudgetEl) {
         topBudgetEl.textContent = currentTeamBudget.toLocaleString('fa-IR');
     }
 
-    // ۲. رندر کردن فرم ویرایش بودجه‌ها برای ادمین (در صورت وجود بخش مربوطه)
+    // ۲. رندر کردن فرم ویرایش بودجه‌ها برای ادمین
     const adminBudgetContainer = document.getElementById('adminBudgetList');
     if (adminBudgetContainer && currentUser === 'admin') {
         adminBudgetContainer.innerHTML = TEAMS_LIST.map(t => `
@@ -134,11 +158,11 @@ function handleLogin() {
     setupUserEnvironment();
 }
 
-function setupUserEnvironment() {
+async function setupUserEnvironment() {
     const isAdmin = (currentUser === 'admin');
     
     // تنظیم تم و عناوین بر اساس کاربر
-    document.body.setAttribute('data-theme', isAdmin ? 'mancity' : currentUser);
+    document.body.setAttribute('data-theme', isAdmin ? 'admin' : currentUser);
     
     const teamObj = TEAMS_LIST.find(t => t.id === currentUser);
     const teamName = teamObj ? teamObj.name : (isAdmin ? 'مدیریت کل لیگ' : currentUser);
@@ -155,15 +179,12 @@ function setupUserEnvironment() {
     // بارگذاری ترکیب و تاکتیک مخصوص این تیم
     loadTeamSquadAndTactics();
 
-    // رندر اولیه تمام بخش‌ها
+    // 🌟 دریافت و بارگذاری تمام اطلاعات بخش لیگ از فضای ابری (که خودش تمام جدول‌ها، بازی‌ها، جام حذفی و... را رندر می‌کند)
+    await loadLeagueDataFromCloud();
+
+    // رندر سایر بخش‌های مستقل (اخبار، نقل و انتقالات و بودجه)
     renderNewsFeed();
-    renderStandings();
-    renderHistory();
-    renderHonors();
-    renderRules();
-    renderStats();
-    renderRequests();
-    renderCup();
+    renderTransferRequests();
     updateBudgetDisplay();
 }
 
@@ -204,38 +225,15 @@ function switchLeagueSubTab(subId, element) {
     const targetSub = document.getElementById(subId);
     if (targetSub) targetSub.classList.add('active');
     if (element) element.classList.add('active');
-}
 
+    // اگر تب بازی‌ها انتخاب شد، بازی‌ها را رندر کن
+    if (subId === 'fixturesSubTab') {
+        renderFixtures();
+    }
+}
 // ==========================================================================
 // MODULE: SQUAD & TACTICS MANAGEMENT (مدیریت ترکیب اختصاصی هر تیم)
 // ==========================================================================
-
-function handleImageUpload(event, previewId, placeholderId, resetBtnId) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // بررسی سایز فایل (محدودیت ۵ مگابایت برای جلوگیری از پر شدن سریع LocalStorage)
-    if (file.size > 5 * 1024 * 1024) {
-        alert('حجم عکس انتخابی نباید بیشتر از ۵ مگابایت باشد.');
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const imageData = e.target.result;
-        
-        // اگر ادمین در حال مشاهده تیم دیگری است، عکس برای همان تیم ذخیره شود
-        const selectedTeam = getActiveSquadTeam();
-        const imageType = previewId.includes('squad') ? 'squad' : 'tactic';
-
-        // ذخیره اختصاصی در LocalStorage با کلید مربوط به تیم
-        localStorage.setItem(`fvl_team_${selectedTeam}_${imageType}`, imageData);
-
-        // نمایش پیش‌نمایش
-        showImagePreview(imageData, previewId, placeholderId, resetBtnId);
-    };
-    reader.readAsDataURL(file);
-}
 
 function showImagePreview(imageData, previewId, placeholderId, resetBtnId) {
     const preview = document.getElementById(previewId);
@@ -249,16 +247,26 @@ function showImagePreview(imageData, previewId, placeholderId, resetBtnId) {
         resetBtn.style.display = 'inline-block';
     }
 }
-
-function resetImageUpload(inputId, previewId, placeholderId, resetBtnId) {
+async function resetImageUpload(inputId, previewId, placeholderId, resetBtnId) {
     const selectedTeam = getActiveSquadTeam();
     const imageType = previewId.includes('squad') ? 'squad' : 'tactic';
+    const urlField = imageType === 'squad' ? 'squad_url' : 'tactic_url';
 
-    // حذف از حافظه
-    localStorage.removeItem(`fvl_team_${selectedTeam}_${imageType}`);
+    // فقط مقدار فیلد مربوطه را در جدول دیتابیس برابر با null قرار بده
+    const { error: dbError } = await _supabase
+        .from('team_squads')
+        .update({ [urlField]: null })
+        .eq('team_id', selectedTeam);
 
-    // بازنشانی UI
+    if (dbError) {
+        console.error('خطا در پاکسازی دیتابیس:', dbError);
+        alert('خطا در پاکسازی اطلاعات از دیتابیس');
+        return;
+    }
+
+    // بازنشانی ظاهر صفحه
     resetImageUI(inputId, previewId, placeholderId, resetBtnId);
+    alert('تصویر مورد نظر با موفقیت حذف شد.');
 }
 
 function resetImageUI(inputId, previewId, placeholderId, resetBtnId) {
@@ -283,12 +291,25 @@ function getActiveSquadTeam() {
 }
 
 // بارگذاری تصاویر ترکیب و تاکتیک تیم فعال
-function loadTeamSquadAndTactics() {
-    setupAdminSquadSelector(); // ایجاد منوی انتخاب تیم برای مدیر در صورت نیاز
+async function loadTeamSquadAndTactics() {
+    setupAdminSquadSelector();
 
     const activeTeam = getActiveSquadTeam();
-    const savedSquad = localStorage.getItem(`fvl_team_${activeTeam}_squad`);
-    const savedTactic = localStorage.getItem(`fvl_team_${activeTeam}_tactic`);
+
+    // خواندن لینک عکس‌ها از جدول دیتابیس Supabase
+    const { data, error } = await _supabase
+        .from('team_squads')
+        .select('*')
+        .eq('team_id', activeTeam)
+        .maybeSingle();
+
+    let savedSquad = '';
+    let savedTactic = '';
+
+    if (data) {
+        savedSquad = data.squad_url || '';
+        savedTactic = data.tactic_url || '';
+    }
 
     if (savedSquad) {
         showImagePreview(savedSquad, 'squadPreview', 'squadPlaceholder', 'squadResetBtn');
@@ -301,6 +322,56 @@ function loadTeamSquadAndTactics() {
     } else {
         resetImageUI('tacticImageInput', 'tacticPreview', 'tacticPlaceholder', 'tacticResetBtn');
     }
+}
+
+async function handleImageUpload(event, previewId, placeholderId, resetBtnId) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+        alert('حجم عکس انتخابی نباید بیشتر از ۵ مگابایت باشد.');
+        return;
+    }
+
+    const selectedTeam = getActiveSquadTeam();
+    const imageType = previewId.includes('squad') ? 'squad' : 'tactic';
+    const fileName = `${selectedTeam}_${imageType}_${Date.now()}.png`;
+
+    // آپلود فایل به Storage
+    const { data, error } = await _supabase.storage
+        .from('squads')
+        .upload(fileName, file);
+
+    if (error) {
+        console.error('خطا در آپلود عکس:', error);
+        alert('خطا در آپلود عکس به سرور ابری');
+        return;
+    }
+
+    // دریافت لینک عمومی عکس
+    const { data: publicUrlData } = _supabase.storage
+        .from('squads')
+        .getPublicUrl(fileName);
+
+    const imageUrl = publicUrlData.publicUrl;
+    const urlField = imageType === 'squad' ? 'squad_url' : 'tactic_url';
+    const pathField = imageType === 'squad' ? 'squad_path' : 'tactic_path';
+
+    // ذخیره لینک و نام فایل (path) در جدول دیتابیس برای حذف آسان بعدی
+    const { error: dbError } = await _supabase
+        .from('team_squads')
+        .upsert({ 
+            team_id: selectedTeam, 
+            [urlField]: imageUrl,
+            [pathField]: fileName 
+        }, { onConflict: 'team_id' });
+
+    if (dbError) {
+        console.error('خطا در دیتابیس:', dbError);
+    }
+
+    showImagePreview(imageUrl, previewId, placeholderId, resetBtnId);
+    alert('عکس با موفقیت آپلود شد!');
 }
 
 // ایجاد منوی کشویی انتخاب تیم برای مدیر در صفحه ترکیب
@@ -332,73 +403,190 @@ function setupAdminSquadSelector() {
 // ==========================================================================
 // MODULE: TRANSFERS & REQUESTS (نقل و انتقالات)
 // ==========================================================================
+// آرایه اصلی برای ذخیره درخواست‌ها
+// دریافت لیست درخواست‌ها از LocalStorage
+// دریافت لیست درخواست‌ها از LocalStorage
+let transferRequests = JSON.parse(localStorage.getItem('fvl_transfer_requests')) || [];
 
-function submitRequest(type) {
-    let text = '';
-    const teamObj = TEAMS_LIST.find(t => t.id === currentUser);
-    const teamName = teamObj ? teamObj.name : currentUser;
+// تابع بررسی ادمین بودن کاربر جاری
+// تابع بررسی ادمین بودن کاربر جاری
+function isUserAdmin() {
+    // استفاده از متغیر سراسری currentUser یا کلید صحیح fvl_logged_user
+    const user = currentUser || localStorage.getItem('fvl_logged_user') || '';
+    return user.toLowerCase() === 'admin';
+}
+async function submitTransferRequest(type) {
+    const user = currentUser || localStorage.getItem('fvl_logged_user') || 'کاربر';
+    let playerName = '';
+    let price = '';
+    let typeLabel = '';
 
     if (type === 'buy') {
-        const pName = document.getElementById('buyPlayerName').value.trim();
-        if (!pName) return alert('نام بازیکن را وارد کنید.');
-        text = `درخواست خرید بازیکن: ${pName} (توسط ${teamName})`;
-        document.getElementById('buyPlayerName').value = '';
+        playerName = document.getElementById('buyPlayerName').value.trim();
+        typeLabel = 'خرید عمومی';
+        if (!playerName) { alert('لطفاً نام بازیکن را وارد کنید.'); return; }
     } else if (type === 'sell') {
-        const pName = document.getElementById('sellPlayerName').value.trim();
-        if (!pName) return alert('نام بازیکن را وارد کنید.');
-        text = `پیشنهاد فروش بازیکن: ${pName} (از طرف ${teamName})`;
-        document.getElementById('sellPlayerName').value = '';
-    } else if (type === 'coach') {
-        const pName = document.getElementById('coachPlayerName').value.trim();
-        const price = document.getElementById('coachOfferPrice').value;
-        if (!pName || !price) return alert('نام بازیکن و مبلغ را وارد کنید.');
-        text = `پیشنهاد مستقیم به مربی: ${pName} با مبلغ ${price} میلیون (از طرف ${teamName})`;
-        document.getElementById('coachPlayerName').value = '';
-        document.getElementById('coachOfferPrice').value = '';
+        playerName = document.getElementById('sellPlayerName').value.trim();
+        typeLabel = 'فروش';
+        if (!playerName) { alert('لطفاً نام بازیکن را وارد کنید.'); return; }
+    } else if (type === 'direct') {
+        playerName = document.getElementById('directPlayerName').value.trim();
+        price = document.getElementById('directPrice').value.trim();
+        typeLabel = 'پیشنهاد مستقیم';
+        if (!playerName || !price) { alert('لطفاً نام بازیکن و قیمت پیشنهادی را وارد کنید.'); return; }
     }
 
-    const newReq = {
+    const newRequest = {
         id: Date.now(),
-        sender: teamName,
-        text: text,
-        date: new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })
+        team: user,
+        type: type,
+        typelabel: typeLabel,     // دقت کنید که حروف کوچک و بزرگ مطابق ستون دیتابیس باشد
+        playername: playerName,  // مطابق ستون دیتابیس (بدون فاصله یا کپیتال اضافه)
+        price: price ? price + ' سکه' : '',
+        status: 'pending',
+        date: new Date().toLocaleDateString('fa-IR')
     };
 
-    requestsData.unshift(newReq);
-    saveData('fvl_requests', requestsData);
-    renderRequests();
-    alert('درخواست شما با موفقیت ثبت شد.');
-}
+    // ارسال به دیتابیس ابری Supabase
+    const { error } = await _supabase
+        .from('transfer_requests')
+        .insert([newRequest]);
 
-function renderRequests() {
-    const listEl = document.getElementById('requestsList');
-    if (!listEl) return;
-
-    if (requestsData.length === 0) {
-        listEl.innerHTML = '<p class="text-muted" style="text-align: center; padding: 15px;">هیچ درخواستی ثبت نشده است.</p>';
+    if (error) {
+        console.error('خطا در ثبت درخواست:', error);
+        alert('خطا در ارتباط با سرور ثبت درخواست');
         return;
     }
 
-    listEl.innerHTML = requestsData.map(req => `
-        <div class="request-item" style="background: rgba(255,255,255,0.05); padding: 10px 15px; margin-bottom: 8px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <strong style="color: #4facfe;">${req.sender}:</strong>
-                <span style="margin-right: 8px; color: #e2e8f0;">${req.text}</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 0.75rem; color: #8a99ad;">${req.date}</span>
-                ${currentUser === 'admin' ? `<button onclick="deleteRequest(${req.id})" style="background: none; border: none; color: #ff4b4b; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>` : ''}
-            </div>
-        </div>
-    `).join('');
+    // پاک‌سازی ورودی‌ها
+    if (type === 'buy') document.getElementById('buyPlayerName').value = '';
+    if (type === 'sell') document.getElementById('sellPlayerName').value = '';
+    if (type === 'direct') {
+        document.getElementById('directPlayerName').value = '';
+        document.getElementById('directPrice').value = '';
+    }
+
+    fetchAndRenderTransferRequests();
 }
 
-function deleteRequest(id) {
-    requestsData = requestsData.filter(r => r.id !== id);
-    saveData('fvl_requests', requestsData);
-    renderRequests();
+async function fetchAndRenderTransferRequests() {
+    const { data, error } = await _supabase
+        .from('transfer_requests')
+        .select('*')
+        .order('id', { ascending: false });
+
+    if (error) {
+        console.error('خطا در خواندن درخواست‌ها:', error);
+        return;
+    }
+
+    transferRequests = data || [];
+    renderTransferRequestsUI();
+}
+function renderTransferRequestsUI() {
+    const container = document.getElementById('requestsList');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const isAdmin = isUserAdmin();
+
+    if (transferRequests.length === 0) {
+        container.innerHTML = '<p class="empty-inbox-msg">هیچ درخواستی ثبت نشده است.</p>';
+        return;
+    }
+
+    transferRequests.forEach(req => {
+        const item = document.createElement('div');
+        item.className = `request-item type-${req.type}`;
+
+        let messageText = '';
+        if (req.type === 'buy') {
+            messageText = `تیم <strong>${req.team}</strong> درخواست خرید عمومی برای <strong>${req.playername}</strong> ثبت کرده است.`;
+        } else if (req.type === 'sell') {
+            messageText = `تیم <strong>${req.team}</strong> درخواست فروش برای <strong>${req.playername}</strong> ثبت کرده است.`;
+        } else if (req.type === 'direct') {
+            messageText = `تیم <strong>${req.team}</strong> درخواست خرید برای <strong>${req.playername}</strong> (${req.price}) ثبت کرده است.`;
+        }
+
+        let actionsHtml = '';
+
+        if (isAdmin) {
+            if (req.status === 'pending') {
+                actionsHtml = `
+                    <div class="req-actions">
+                        <button class="btn-status-approve" onclick="changeRequestStatus(${req.id}, 'approved')">تایید</button>
+                        <button class="btn-status-reject" onclick="changeRequestStatus(${req.id}, 'rejected')">رد</button>
+                        <button class="btn-status-delete" onclick="deleteTransferRequest(${req.id})"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+            } else {
+                const badgeClass = req.status === 'approved' ? 'approved' : 'rejected';
+                const statusText = req.status === 'approved' ? 'تایید شده' : 'رد شده';
+                actionsHtml = `
+                    <div class="req-actions">
+                        <span class="status-badge ${badgeClass}">${statusText}</span>
+                        <button class="btn-status-delete" onclick="deleteTransferRequest(${req.id})"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+            }
+        } else {
+            let statusText = 'در حال بررسی';
+            let badgeClass = 'pending';
+            if (req.status === 'approved') { statusText = 'تایید شده'; badgeClass = 'approved'; }
+            else if (req.status === 'rejected') { statusText = 'رد شده'; badgeClass = 'rejected'; }
+
+            actionsHtml = `<span class="status-badge ${badgeClass}">${statusText}</span>`;
+        }
+
+        item.innerHTML = `
+            <div class="req-info">
+                <span class="req-badge badge-${req.type}">${req.typelabel}</span>
+                <div style="margin-right: 10px;">
+                    <div class="req-text">${messageText}</div>
+                    <div class="req-meta">${req.date}</div>
+                </div>
+            </div>
+            ${actionsHtml}
+        `;
+
+        container.appendChild(item);
+    });
 }
 
+// تابع واسط برای دکمه به‌روزرسانی صفحه
+function renderTransferRequests() {
+    fetchAndRenderTransferRequests();
+}
+
+// تغییر وضعیت توسط ادمین (تایید یا رد)
+async function changeRequestStatus(id, newStatus) {
+    const { error } = await _supabase
+        .from('transfer_requests')
+        .update({ status: newStatus })
+        .eq('id', id);
+
+    if (!error) {
+        fetchAndRenderTransferRequests();
+    }
+}
+
+async function deleteTransferRequest(id) {
+    if (confirm('آیا از حذف این درخواست مطمئن هستید؟')) {
+        const { error } = await _supabase
+            .from('transfer_requests')
+            .delete()
+            .eq('id', id);
+
+        if (!error) {
+            fetchAndRenderTransferRequests();
+        }
+    }
+}
+
+// اجرای خودکار هنگام لود صفحه
+document.addEventListener('DOMContentLoaded', () => {
+    renderTransferRequests();
+});
 // ==========================================================================
 // MODULE: NEWS (اخبار و حواشی)
 // ==========================================================================
@@ -414,8 +602,7 @@ function getInitialNews() {
         }
     ];
 }
-
-function saveNews() {
+async function saveNews() {
     const title = document.getElementById('newsTitleInput').value.trim();
     const cat = document.getElementById('newsCategorySelect').value;
     const content = document.getElementById('newsContentInput').value.trim();
@@ -424,13 +611,19 @@ function saveNews() {
     if (!title || !content) return alert('لطفاً عنوان و متن خبر را تکمیل کنید.');
 
     if (editId) {
-        const index = newsData.findIndex(n => n.id == editId);
-        if (index !== -1) {
-            newsData[index].title = title;
-            newsData[index].category = cat;
-            newsData[index].content = content;
+        // ویرایش خبر موجود در دیتابیس
+        const { error } = await _supabase
+            .from('news')
+            .update({ title: title, category: cat, content: content })
+            .eq('id', editId);
+
+        if (error) {
+            console.error('خطا در ویرایش خبر:', error);
+            alert('خطا در بروزرسانی خبر');
+            return;
         }
     } else {
+        // ثبت خبر جدید در دیتابیس
         const newNews = {
             id: Date.now(),
             title: title,
@@ -438,10 +631,18 @@ function saveNews() {
             content: content,
             date: new Date().toLocaleDateString('fa-IR')
         };
-        newsData.unshift(newNews);
+
+        const { error } = await _supabase
+            .from('news')
+            .insert([newNews]);
+
+        if (error) {
+            console.error('خطا در ثبت خبر:', error);
+            alert('خطا در ثبت خبر در سرور');
+            return;
+        }
     }
 
-    saveData('fvl_news', newsData);
     cancelNewsEdit();
     renderNewsFeed();
 }
@@ -451,10 +652,21 @@ function filterNews(cat, btn) {
     if (btn) btn.classList.add('active');
     renderNewsFeed(cat);
 }
-
-function renderNewsFeed(categoryFilter = 'all') {
+async function renderNewsFeed(categoryFilter = 'all') {
     const feed = document.getElementById('newsFeed');
     if (!feed) return;
+
+    const { data, error } = await _supabase
+        .from('news')
+        .select('*')
+        .order('id', { ascending: false });
+
+    if (error) {
+        console.error('خطا در خواندن اخبار:', error);
+        return;
+    }
+
+    newsData = data || [];
 
     let filtered = newsData;
     if (categoryFilter !== 'all') {
@@ -511,10 +723,19 @@ function cancelNewsEdit() {
     document.getElementById('btnCancelEdit').style.display = 'none';
 }
 
-function deleteNews(id) {
+async function deleteNews(id) {
     if (confirm('آیا از حذف این خبر اطمینان دارید؟')) {
-        newsData = newsData.filter(n => n.id !== id);
-        saveData('fvl_news', newsData);
+        const { error } = await _supabase
+            .from('news')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('خطا در حذف خبر:', error);
+            alert('خطا در حذف خبر از سرور');
+            return;
+        }
+
         renderNewsFeed();
     }
 }
@@ -522,6 +743,53 @@ function deleteNews(id) {
 // ==========================================================================
 // MODULE: LEAGUE STANDINGS & HISTORY (جدول و تاریخچه)
 // ==========================================================================
+
+// بارگذاری همگانی داده‌های لیگ از جدول ابری
+async function loadLeagueDataFromCloud() {
+    const { data, error } = await _supabase
+        .from('league_data')
+        .select('*');
+
+    if (error) {
+        console.error('خطا در دریافت اطلاعات لیگ:', error);
+        return;
+    }
+
+    if (data) {
+        data.forEach(item => {
+            if (item.key === 'standings') standingsData = item.value;
+            if (item.key === 'fixtures') fixturesData = item.value;
+            if (item.key === 'history') historyData = item.value;
+            if (item.key === 'honors') honorsData = item.value;
+            if (item.key === 'cup') cupData = item.value;
+            if (item.key === 'rules') rulesData = item.value;
+            if (item.key === 'stats') statsData = item.value;
+        });
+    }
+
+    // رندر کردن تمام بخش‌ها پس از دریافت اطلاعات
+    renderStandings();
+    renderFixtures();
+    renderHistory();
+    renderHonors();
+    renderCup();
+    renderRules();
+    renderStats();
+}
+
+// تابع عمومی برای ذخیره هر بخش در جدول ابری
+async function saveLeagueDataToCloud(key, value) {
+    const { error } = await _supabase
+        .from('league_data')
+        .upsert({ key: key, value: value }, { onConflict: 'key' });
+
+    if (error) {
+        console.error(`خطا در ذخیره ${key}:`, error);
+        alert('خطا در ارتباط با سرور ابری');
+        return false;
+    }
+    return true;
+}
 
 function getInitialStandings() {
     return TEAMS_LIST.map(t => ({
@@ -532,11 +800,22 @@ function getInitialStandings() {
     }));
 }
 
-function renderStandings() {
+async function renderStandings() {
     const tbody = document.getElementById('standingsTbody');
     if (!tbody) return;
 
-    // مرتب‌سازی جدول بر اساس امتیاز، تفاضل گل و گل زده
+    const { data, error } = await _supabase
+        .from('standings')
+        .select('*');
+
+    if (error) {
+        console.error('خطا در خواندن رده‌بندی:', error);
+        return;
+    }
+
+    standingsData = data || [];
+
+    // مرتب‌سازی بر اساس امتیاز، تفاضل گل و گل زده
     const sorted = [...standingsData].sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf);
 
     tbody.innerHTML = sorted.map((team, idx) => `
@@ -578,7 +857,7 @@ function toggleEditStandings() {
     }
 }
 
-function saveStandings() {
+async function saveStandings() {
     standingsData.forEach(t => {
         const p = parseInt(document.getElementById(`p_${t.id}`).value) || 0;
         const w = parseInt(document.getElementById(`w_${t.id}`).value) || 0;
@@ -593,10 +872,10 @@ function saveStandings() {
         t.points = (w * 3) + d;
     });
 
-    saveData('fvl_standings', standingsData);
+    await saveLeagueDataToCloud('standings', standingsData);
     renderStandings();
     toggleEditStandings();
-    alert('جدول با موفقیت بروزرسانی شد.');
+    alert('جدول رده‌بندی در فضای ابری بروزرسانی شد.');
 }
 
 function renderHistory() {
@@ -605,13 +884,18 @@ function renderHistory() {
     feed.innerHTML = historyData.map(h => `<div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #e2e8f0;">• ${h}</div>`).join('');
 }
 
-function saveHistory() {
+async function saveHistory() {
     const inp = document.getElementById('historyInput');
     if (!inp || !inp.value.trim()) return;
+    
     historyData.unshift(inp.value.trim());
-    saveData('fvl_history', historyData);
+    
+    // ذخیره در فضای ابری
+    await saveLeagueDataToCloud('history', historyData);
+    
     inp.value = '';
     renderHistory();
+    alert('تاریخچه با موفقیت در فضای ابری ثبت شد.');
 }
 
 function renderRules() {
@@ -620,15 +904,196 @@ function renderRules() {
     feed.innerHTML = rulesData.map((r, i) => `<div style="padding: 8px 0; color: #e2e8f0;"><strong>${i + 1}.</strong> ${r}</div>`).join('');
 }
 
-function saveRule() {
+async function saveRule() {
     const inp = document.getElementById('rulesInput');
     if (!inp || !inp.value.trim()) return;
+    
     rulesData.push(inp.value.trim());
-    saveData('fvl_rules', rulesData);
+    
+    // ذخیره در فضای ابری
+    await saveLeagueDataToCloud('rules', rulesData);
+    
     inp.value = '';
     renderRules();
+    alert('قانون جدید با موفقیت ثبت شد.');
 }
 
+// دریافت یا ایجاد داده‌های بازی‌ها
+let fixturesData = JSON.parse(localStorage.getItem('fvl_fixtures')) || [
+    { weekNumber: 1, matches: [] },
+    { weekNumber: 2, matches: [] },
+    { weekNumber: 3, matches: [] },
+    { weekNumber: 4, matches: [] },
+    { weekNumber: 5, matches: [] },
+    { weekNumber: 6, matches: [] }
+];
+
+// تابع پر کردن منوی کشویی تیم‌ها بر اساس TEAMS_LIST
+// تابع پر کردن منوی کشویی تیم‌ها بر اساس TEAMS_LIST
+function setupMatchTeamSelects() {
+    const homeSelect = document.getElementById('homeTeamSelect');
+    const awaySelect = document.getElementById('awayTeamSelect');
+
+    if (!homeSelect || !awaySelect) return;
+
+    // گزینه‌های منو
+    const optionsHtml = '<option value="">انتخاب تیم...</option>' + 
+        TEAMS_LIST.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+
+    homeSelect.innerHTML = optionsHtml;
+    awaySelect.innerHTML = optionsHtml;
+}
+
+// تابع نمایش/مخفی‌سازی فرم ادمین و پر کردن منوی کشویی
+function toggleAdminMatchForm() {
+    const form = document.getElementById('adminMatchFormCard');
+    if (form) {
+        const isHidden = form.style.display === 'none' || form.style.display === '';
+        form.style.display = isHidden ? 'block' : 'none';
+        
+        if (isHidden) {
+            setupMatchTeamSelects(); // پر کردن منوهای کشویی هنگام باز شدن فرم
+        }
+    }
+}
+// تابع افزودن بازی جدید با ذخیره در فضای ابری
+async function addNewMatch() {
+    const weekNum = parseInt(document.getElementById('matchWeekSelect').value);
+    const homeTeam = document.getElementById('homeTeamSelect').value;
+    const awayTeam = document.getElementById('awayTeamSelect').value;
+
+    if (!homeTeam || !awayTeam) {
+        alert('لطفاً هم تیم میزبان و هم تیم میهمان را انتخاب کنید.');
+        return;
+    }
+
+    if (homeTeam === awayTeam) {
+        alert('تیم میزبان و میهمان نمی‌توانند یکسان باشند!');
+        return;
+    }
+
+    const weekObj = fixturesData.find(w => w.weekNumber === weekNum);
+    if (weekObj) {
+        const newMatch = {
+            id: 'm_' + Date.now(),
+            home: homeTeam,
+            away: awayTeam,
+            homeScore: '',
+            awayScore: ''
+        };
+        weekObj.matches.push(newMatch);
+        
+        // ذخیره در دیتابیس ابری Supabase
+        const success = await saveLeagueDataToCloud('fixtures', fixturesData);
+        if (!success) return;
+
+        // بازنشانی مقادیر منوها
+        document.getElementById('homeTeamSelect').value = '';
+        document.getElementById('awayTeamSelect').value = '';
+        
+        renderFixtures();
+        alert(`بازی (${homeTeam} - ${awayTeam}) با موفقیت به هفته ${weekNum} اضافه شد.`);
+    }
+}
+
+// تابع حذف بازی توسط ادمین و بروزرسانی در فضای ابری
+async function deleteMatch(matchId) {
+    if (!confirm('آیا از حذف این بازی اطمینان دارید؟')) return;
+
+    fixturesData.forEach(week => {
+        week.matches = week.matches.filter(m => m.id !== matchId);
+    });
+
+    // ذخیره تغییرات در دیتابیس ابری Supabase
+    const success = await saveLeagueDataToCloud('fixtures', fixturesData);
+    if (!success) return;
+
+    renderFixtures();
+    alert('بازی مورد نظر با موفقیت حذف شد.');
+}
+// تابع رندر بازی‌ها و فرم ادمین
+function renderFixtures() {
+    const container = document.getElementById('fixturesContainer');
+    const adminBtn = document.getElementById('adminAddMatchBtn');
+    
+    // بررسی ادمین بودن کاربر
+    const isAdmin = currentUser === 'admin'; // یا طبق لاجیک پروژه‌تان
+
+    if (adminBtn) {
+        adminBtn.style.display = isAdmin ? 'block' : 'none';
+    }
+
+    if (!container) return;
+
+    let html = '';
+
+    fixturesData.forEach(week => {
+        html += `
+            <div class="week-card" style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);">
+                <h3 style="color: #4facfe; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;">
+                    <i class="fa-solid fa-calendar-week"></i> هفته ${week.weekNumber}
+                </h3>
+                <div class="matches-list" style="display: flex; flex-direction: column; gap: 10px;">
+        `;
+
+        if (week.matches.length === 0) {
+            html += `<div style="color: #888; text-align: center; font-size: 0.9rem; padding: 10px;">هنوز بازی برای این هفته تعریف نشده است.</div>`;
+        } else {
+            week.matches.forEach(m => {
+                html += `
+                    <div class="match-item" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 10px 15px; border-radius: 8px;">
+                        <div style="flex: 1; text-align: left; font-weight: bold; color: #fff;">
+                            ${m.home} <span style="font-size: 0.75rem; color: #8a99ad;">(میزبان)</span>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 8px; margin: 0 15px;">
+                            ${isAdmin ? `
+                                <input type="number" id="hs_${m.id}" value="${m.homeScore}" style="width: 40px; text-align: center; border-radius: 4px; border: 1px solid #444; background: #222; color: #fff;">
+                                <span>-</span>
+                                <input type="number" id="as_${m.id}" value="${m.awayScore}" style="width: 40px; text-align: center; border-radius: 4px; border: 1px solid #444; background: #222; color: #fff;">
+                                <button onclick="saveMatchResult('${m.id}')" style="background: #22c55e; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">ثبت نتیجه</button>
+                                <button onclick="deleteMatch('${m.id}')" style="background: #ef4444; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">حذف</button>
+                            ` : `
+                                <span style="background: #111; padding: 4px 10px; border-radius: 6px; font-weight: bold; color: #ffd700;">
+                                    ${m.homeScore !== '' ? m.homeScore : '-'} : ${m.awayScore !== '' ? m.awayScore : '-'}
+                                </span>
+                            `}
+                        </div>
+
+                        <div style="flex: 1; text-align: right; font-weight: bold; color: #fff;">
+                            <span style="font-size: 0.75rem; color: #8a99ad;">(میهمان)</span> ${m.away}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        html += `
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+// تابع ذخیره نتیجه مسابقه
+// تابع ذخیره نتیجه مسابقه
+async function saveMatchResult(matchId) {
+    const hs = document.getElementById(`hs_${matchId}`).value;
+    const as = document.getElementById(`as_${matchId}`).value;
+
+    fixturesData.forEach(week => {
+        const match = week.matches.find(m => m.id === matchId);
+        if (match) {
+            match.homeScore = hs;
+            match.awayScore = as;
+        }
+    });
+
+    await saveLeagueDataToCloud('fixtures', fixturesData);
+    alert('نتیجه بازی با موفقیت به روزرسانی شد.');
+}
 // ==========================================================================
 // MODULE: HONORS & CUP & STATS (افتخارات، جام حذفی و آمار)
 // ==========================================================================
@@ -651,28 +1116,32 @@ function renderHonors() {
     `).join('');
 }
 
-function saveHonor() {
+async function saveHonor() {
     const title = document.getElementById('honorTitleInput').value.trim();
     const desc = document.getElementById('honorDescInput').value.trim();
     const fileInp = document.getElementById('honorImageInput');
 
     if (!title) return alert('عنوان افتخار را وارد کنید.');
 
-    const addHonor = (imgData = '') => {
+    const addHonor = async (imgData = '') => {
         honorsData.push({ title, desc, img: imgData });
-        saveData('fvl_honors', honorsData);
+        
+        // ذخیره در فضای ابری
+        await saveLeagueDataToCloud('honors', honorsData);
+        
         renderHonors();
         document.getElementById('honorTitleInput').value = '';
         document.getElementById('honorDescInput').value = '';
         if (fileInp) fileInp.value = '';
+        alert('افتخار جدید ثبت شد.');
     };
 
     if (fileInp && fileInp.files[0]) {
         const reader = new FileReader();
-        reader.onload = e => addHonor(e.target.result);
+        reader.onload = async e => await addHonor(e.target.result);
         reader.readAsDataURL(fileInp.files[0]);
     } else {
-        addHonor();
+        await addHonor();
     }
 }
 
@@ -697,7 +1166,7 @@ function setupCupSelects() {
     });
 }
 
-function saveCupData() {
+async function saveCupData() {
     cupData = {
         s1_1: document.getElementById('cupSemi1_1').value,
         s1_2: document.getElementById('cupSemi1_2').value,
@@ -707,9 +1176,12 @@ function saveCupData() {
         f_2: document.getElementById('cupFinal_2').value,
         winner: document.getElementById('cupWinner').value
     };
-    saveData('fvl_cup', cupData);
+    
+    // ذخیره در فضای ابری
+    await saveLeagueDataToCloud('cup', cupData);
+    
     renderCup();
-    alert('جام حذفی بروزرسانی شد.');
+    alert('جام حذفی در فضای ابری بروزرسانی شد.');
 }
 
 function toggleEditStats() {
@@ -725,7 +1197,7 @@ function toggleEditStats() {
     }
 }
 
-function addTopStat() {
+async function addTopStat() {
     const type = document.getElementById('statTypeSelect').value;
     const player = document.getElementById('statPlayerInput').value.trim();
     const team = document.getElementById('statTeamSelect').value;
@@ -735,10 +1207,14 @@ function addTopStat() {
 
     statsData[type].push({ player, team, count });
     statsData[type].sort((a, b) => b.count - a.count);
-    saveData('fvl_stats', statsData);
+    
+    // ذخیره در فضای ابری
+    await saveLeagueDataToCloud('stats', statsData);
+    
     renderStats();
     document.getElementById('statPlayerInput').value = '';
     document.getElementById('statCountInput').value = '';
+    alert('آمار جدید با موفقیت ثبت شد.');
 }
 
 function renderStats() {
@@ -774,3 +1250,9 @@ function closeSettingsModal() {
         modal.style.display = 'none';
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadAllDataFromStorage();
+    checkSession();
+    fetchAndRenderTransferRequests(); // فراخوانی آنلاین درخواست‌ها
+});
