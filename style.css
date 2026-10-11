@@ -2208,3 +2208,137 @@ body {
     font-weight: bold;
     color: #e2e8f0;
 }
+
+
+/* استایل واکنش‌گرا فرم ویرایش جدول */
+.edit-standings-row {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.team-title-name {
+    font-weight: bold;
+    color: #ffd700;
+    font-size: 0.95rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 4px;
+}
+
+.inputs-grid-group {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* ۳ ستون در هر ردیف برای موبایل */
+    gap: 8px;
+}
+
+.inputs-grid-group label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #cbd5e1;
+}
+
+.inputs-grid-group input {
+    width: 42px !important;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+/* در صفحات بزرگ‌تر (لپ‌تاپ/تبلت) ورودی‌ها در یک ردیف ۶‌تایی قرار بگیرند */
+@media (min-width: 600px) {
+    .inputs-grid-group {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+/* --- استایل جمع‌وجور و مدرن برای ویرایش جدول --- */
+.edit-team-card {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(79, 172, 254, 0.3);
+    border-radius: 12px;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.edit-team-title {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #ffd700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 4px;
+}
+
+.edit-inputs-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* ۳ ستون در هر ردیف */
+    gap: 6px;
+}
+
+.stat-input-box {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* کوچک‌تر کردن و استایل‌دهی به اینپوت و دکمه‌های اسپینر داخلی */
+.stat-input-box input {
+    width: 100% !important;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: bold;
+    outline: none;
+    transition: 0.2s;
+}
+
+.stat-input-box input:focus {
+    border-color: #00d2ff;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+/* سفارشی‌سازی دکمه‌های بالا و پایین (Spiners) در مرورگرها برای ظاهر مدرن‌تر */
+.stat-input-box input::-webkit-inner-spin-button,
+.stat-input-box input::-webkit-outer-spin-button {
+    opacity: 1;
+    height: 24px;
+    cursor: pointer;
+    filter: invert(1) hue-rotate(180deg); /* تغییر رنگ فلش‌ها برای هماهنگی با تم تاریک */
+}
+
+/* تنظیمات برای صفحات بزرگتر (لپ‌تاپ) */
+@media (min-width: 650px) {
+    .edit-inputs-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}

@@ -17,11 +17,12 @@ let honorsData = [];
 let rulesData = [];
 let statsData = { goals: [], assists: [], cleansheets: [] };
 let requestsData = [];
-let cupData = {
-    s1_1: '', s1_2: '',
-    s2_1: '', s2_2: '',
-    f_1: '', f_2: '',
-    winner: ''
+// ساختار پیش‌فرض جام حذفی
+let cupData = JSON.parse(localStorage.getItem('fvl_cup')) || {
+    teamCount: 4,
+    teams: ['', '', '', ''],
+    semiWinners: ['', ''], // برندگان دو مسابقه نیمه‌نهایی
+    winner: ''            // قهرمان نهایی
 };
 
 // لیست تیم‌های لیگ
@@ -253,7 +254,6 @@ async function resetImageUpload(inputId, previewId, placeholderId, resetBtnId) {
     const imageType = previewId.includes('squad') ? 'squad' : 'tactic';
     const urlField = imageType === 'squad' ? 'squad_url' : 'tactic_url';
 
-    // فقط مقدار فیلد مربوطه را در جدول دیتابیس برابر با null قرار بده
     const { error: dbError } = await _supabase
         .from('team_squads')
         .update({ [urlField]: null })
@@ -261,11 +261,9 @@ async function resetImageUpload(inputId, previewId, placeholderId, resetBtnId) {
 
     if (dbError) {
         console.error('خطا در پاکسازی دیتابیس:', dbError);
-        alert('خطا در پاکسازی اطلاعات از دیتابیس');
         return;
     }
 
-    // بازنشانی ظاهر صفحه
     resetImageUI(inputId, previewId, placeholderId, resetBtnId);
     alert('تصویر مورد نظر با موفقیت حذف شد.');
 }
@@ -294,37 +292,32 @@ function getActiveSquadTeam() {
 // بارگذاری تصاویر ترکیب و تاکتیک تیم فعال
 async function loadTeamSquadAndTactics() {
     setupAdminSquadSelector();
-
     const activeTeam = getActiveSquadTeam();
 
-    // خواندن لینک عکس‌ها از جدول دیتابیس Supabase
+    // پاکسازی موقت پیش‌نمایش‌ها قبل از دریافت داده جدید
+    resetImageUI('squadImageInput', 'squadPreview', 'squadPlaceholder', 'squadResetBtn');
+    resetImageUI('tacticImageInput', 'tacticPreview', 'tacticPlaceholder', 'tacticResetBtn');
+
     const { data, error } = await _supabase
         .from('team_squads')
         .select('*')
         .eq('team_id', activeTeam)
         .maybeSingle();
 
-    let savedSquad = '';
-    let savedTactic = '';
+    if (error) {
+        console.error('خطا در دریافت ترکیب:', error);
+        return;
+    }
 
     if (data) {
-        savedSquad = data.squad_url || '';
-        savedTactic = data.tactic_url || '';
-    }
-
-    if (savedSquad) {
-        showImagePreview(savedSquad, 'squadPreview', 'squadPlaceholder', 'squadResetBtn');
-    } else {
-        resetImageUI('squadImageInput', 'squadPreview', 'squadPlaceholder', 'squadResetBtn');
-    }
-
-    if (savedTactic) {
-        showImagePreview(savedTactic, 'tacticPreview', 'tacticPlaceholder', 'tacticResetBtn');
-    } else {
-        resetImageUI('tacticImageInput', 'tacticPreview', 'tacticPlaceholder', 'tacticResetBtn');
+        if (data.squad_url) {
+            showImagePreview(data.squad_url, 'squadPreview', 'squadPlaceholder', 'squadResetBtn');
+        }
+        if (data.tactic_url) {
+            showImagePreview(data.tactic_url, 'tacticPreview', 'tacticPlaceholder', 'tacticResetBtn');
+        }
     }
 }
-
 async function handleImageUpload(event, previewId, placeholderId, resetBtnId) {
     const file = event.target.files[0];
     if (!file) return;
@@ -338,7 +331,7 @@ async function handleImageUpload(event, previewId, placeholderId, resetBtnId) {
     const imageType = previewId.includes('squad') ? 'squad' : 'tactic';
     const fileName = `${selectedTeam}_${imageType}_${Date.now()}.png`;
 
-    // آپلود فایل به Storage
+    // ۱. آپلود فایل به Storage
     const { data, error } = await _supabase.storage
         .from('squads')
         .upload(fileName, file);
@@ -349,30 +342,30 @@ async function handleImageUpload(event, previewId, placeholderId, resetBtnId) {
         return;
     }
 
-    // دریافت لینک عمومی عکس
+    // ۲. دریافت لینک عمومی عکس
     const { data: publicUrlData } = _supabase.storage
         .from('squads')
         .getPublicUrl(fileName);
 
     const imageUrl = publicUrlData.publicUrl;
-    const urlField = imageType === 'squad' ? 'squad_url' : 'tactic_url';
-    const pathField = imageType === 'squad' ? 'squad_path' : 'tactic_path';
+    const urlField = imageType === 'squad' ? 'squad_url' : 't_tactic_url' === 'squad' ? 'squad_url' : (imageType === 'squad' ? 'squad_url' : 'tactic_url');
 
-    // ذخیره لینک و نام فایل (path) در جدول دیتابیس برای حذف آسان بعدی
+    // ۳. ذخیره فقط لینک در جدول دیتابیس (مطابق ستون‌های موجود در Supabase)
     const { error: dbError } = await _supabase
         .from('team_squads')
         .upsert({ 
             team_id: selectedTeam, 
-            [urlField]: imageUrl,
-            [pathField]: fileName 
+            [imageType === 'squad' ? 'squad_url' : 'tactic_url']: imageUrl
         }, { onConflict: 'team_id' });
 
     if (dbError) {
         console.error('خطا در دیتابیس:', dbError);
+        alert('خطا در ثبت لینک عکس در دیتابیس');
+        return;
     }
 
     showImagePreview(imageUrl, previewId, placeholderId, resetBtnId);
-    alert('عکس با موفقیت آپلود شد!');
+    alert('عکس با موفقیت آپلود و ذخیره شد!');
 }
 
 // ایجاد منوی کشویی انتخاب تیم برای مدیر در صفحه ترکیب
@@ -805,6 +798,7 @@ async function renderStandings() {
     const tbody = document.getElementById('standingsTbody');
     if (!tbody) return;
 
+    // خواندن مستقیم از جدول standings در Supabase
     const { data, error } = await _supabase
         .from('standings')
         .select('*');
@@ -842,14 +836,34 @@ function toggleEditStandings() {
     if (form.style.display === 'none') {
         const container = document.getElementById('standingsInputsContainer');
         container.innerHTML = standingsData.map(t => `
-            <div style="display: flex; gap: 5px; margin-bottom: 8px; align-items: center; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 6px;">
-                <span style="width: 120px; font-weight: bold;">${t.name}:</span>
-                بازی: <input type="number" id="p_${t.id}" value="${t.played}" style="width: 45px;">
-                برد: <input type="number" id="w_${t.id}" value="${t.won}" style="width: 45px;">
-                مساوی: <input type="number" id="d_${t.id}" value="${t.drawn}" style="width: 45px;">
-                باخت: <input type="number" id="l_${t.id}" value="${t.lost}" style="width: 45px;">
-                گ.زد: <input type="number" id="gf_${t.id}" value="${t.gf}" style="width: 45px;">
-                گ.خ: <input type="number" id="ga_${t.id}" value="${t.ga}" style="width: 45px;">
+            <div class="edit-team-card">
+                <div class="edit-team-title"><i class="fa-solid fa-shield-halved"></i> ${t.name}</div>
+                <div class="edit-inputs-grid">
+                    <div class="stat-input-box">
+                        <span class="stat-label">بازی</span>
+                        <input type="number" id="p_${t.id}" value="${t.played}" min="0" oninput="if(this.value < 0) this.value = 0;">
+                    </div>
+                    <div class="stat-input-box">
+                        <span class="stat-label">برد</span>
+                        <input type="number" id="w_${t.id}" value="${t.won}" min="0" oninput="if(this.value < 0) this.value = 0;">
+                    </div>
+                    <div class="stat-input-box">
+                        <span class="stat-label">مساوی</span>
+                        <input type="number" id="d_${t.id}" value="${t.drawn}" min="0" oninput="if(this.value < 0) this.value = 0;">
+                    </div>
+                    <div class="stat-input-box">
+                        <span class="stat-label">باخت</span>
+                        <input type="number" id="l_${t.id}" value="${t.lost}" min="0" oninput="if(this.value < 0) this.value = 0;">
+                    </div>
+                    <div class="stat-input-box">
+                        <span class="stat-label">گل‌زده</span>
+                        <input type="number" id="gf_${t.id}" value="${t.gf}" min="0" oninput="if(this.value < 0) this.value = 0;">
+                    </div>
+                    <div class="stat-input-box">
+                        <span class="stat-label">گل‌خورده</span>
+                        <input type="number" id="ga_${t.id}" value="${t.ga}" min="0" oninput="if(this.value < 0) this.value = 0;">
+                    </div>
+                </div>
             </div>
         `).join('');
         form.style.display = 'block';
@@ -859,7 +873,7 @@ function toggleEditStandings() {
 }
 
 async function saveStandings() {
-    standingsData.forEach(t => {
+    for (let t of standingsData) {
         const p = parseInt(document.getElementById(`p_${t.id}`).value) || 0;
         const w = parseInt(document.getElementById(`w_${t.id}`).value) || 0;
         const d = parseInt(document.getElementById(`d_${t.id}`).value) || 0;
@@ -867,16 +881,91 @@ async function saveStandings() {
         const gf = parseInt(document.getElementById(`gf_${t.id}`).value) || 0;
         const ga = parseInt(document.getElementById(`ga_${t.id}`).value) || 0;
 
-        t.played = p; t.won = w; t.drawn = d; t.lost = l;
-        t.gf = gf; t.ga = ga;
+        t.played = p; 
+        t.won = w; 
+        t.drawn = d; 
+        t.lost = l;
+        t.gf = gf; 
+        t.ga = ga;
         t.gd = gf - ga;
         t.points = (w * 3) + d;
-    });
 
-    await saveLeagueDataToCloud('standings', standingsData);
+        // ذخیره هر تیم در جدول standings پایگاه داده
+        const { error } = await _supabase
+            .from('standings')
+            .upsert({
+                id: t.id,
+                name: t.name,
+                played: t.played,
+                won: t.won,
+                drawn: t.drawn,
+                lost: t.lost,
+                gf: t.gf,
+                ga: t.ga,
+                gd: t.gd,
+                points: t.points
+            }, { onConflict: 'id' });
+
+        if (error) {
+            console.error(`خطا در ذخیره تیم ${t.name}:`, error);
+            alert(`خطا در ذخیره اطلاعات تیم ${t.name}`);
+            return;
+        }
+    }
+
     renderStandings();
     toggleEditStandings();
-    alert('جدول رده‌بندی در فضای ابری بروزرسانی شد.');
+    alert('جدول رده‌بندی با موفقیت در فضای ابری بروزرسانی شد.');
+}
+
+// تابع بازنشانی و صفر کردن کامل اطلاعات جدول رده‌بندی لیگ
+async function resetStandingsData() {
+    if (!confirm('آیا مطمئن هستید که می‌خواهید تمام آمارهای جدول رده‌بندی (بازی‌ها، امتیازات و...) را صفر و ریست کنید؟')) {
+        return;
+    }
+
+    // صفر کردن آمار تمام تیم‌ها بر اساس لیست تیم‌های لیگ
+    standingsData = TEAMS_LIST.map(t => ({
+        id: t.id,
+        name: t.name,
+        played: 0, 
+        won: 0, 
+        drawn: 0, 
+        lost: 0,
+        gf: 0, 
+        ga: 0, 
+        gd: 0, 
+        points: 0
+    }));
+
+    // ذخیره تیم‌های صفر شده در جدول standings در فضای ابری
+    for (let t of standingsData) {
+        const { error } = await _supabase
+            .from('standings')
+            .upsert({
+                id: t.id,
+                name: t.name,
+                played: t.played,
+                won: t.won,
+                drawn: t.drawn,
+                lost: t.lost,
+                gf: t.gf,
+                ga: t.ga,
+                gd: t.gd,
+                points: t.points
+            }, { onConflict: 'id' });
+
+        if (error) {
+            console.error(`خطا در ریست کردن تیم ${t.name}:`, error);
+            alert(`خطا در ارتباط با سرور برای ریست تیم ${t.name}`);
+            return;
+        }
+    }
+
+    // رندر مجدد جدول و بستن فرم ویرایش
+    renderStandings();
+    toggleEditStandings();
+    alert('جدول رده‌بندی لیگ با موفقیت ریست و صفر شد.');
 }
 
 function renderHistory() {
@@ -1013,12 +1102,13 @@ async function deleteMatch(matchId) {
     alert('بازی مورد نظر با موفقیت حذف شد.');
 }
 // تابع رندر بازی‌ها و فرم ادمین
+// تابع رندر بازی‌ها و فرم ادمین با محافظت در برابر اعداد منفی
 function renderFixtures() {
     const container = document.getElementById('fixturesContainer');
     const adminBtn = document.getElementById('adminAddMatchBtn');
     
     // بررسی ادمین بودن کاربر
-    const isAdmin = currentUser === 'admin'; // یا طبق لاجیک پروژه‌تان
+    const isAdmin = currentUser === 'admin';
 
     if (adminBtn) {
         adminBtn.style.display = isAdmin ? 'block' : 'none';
@@ -1049,9 +1139,9 @@ function renderFixtures() {
                         
                         <div style="display: flex; align-items: center; gap: 8px; margin: 0 15px;">
                             ${isAdmin ? `
-                                <input type="number" id="hs_${m.id}" value="${m.homeScore}" style="width: 40px; text-align: center; border-radius: 4px; border: 1px solid #444; background: #222; color: #fff;">
+                                <input type="number" id="hs_${m.id}" value="${m.homeScore}" min="0" oninput="if(this.value < 0) this.value = 0;" style="width: 40px; text-align: center; border-radius: 4px; border: 1px solid #444; background: #222; color: #fff;">
                                 <span>-</span>
-                                <input type="number" id="as_${m.id}" value="${m.awayScore}" style="width: 40px; text-align: center; border-radius: 4px; border: 1px solid #444; background: #222; color: #fff;">
+                                <input type="number" id="as_${m.id}" value="${m.awayScore}" min="0" oninput="if(this.value < 0) this.value = 0;" style="width: 40px; text-align: center; border-radius: 4px; border: 1px solid #444; background: #222; color: #fff;">
                                 <button onclick="saveMatchResult('${m.id}')" style="background: #22c55e; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">ثبت نتیجه</button>
                                 <button onclick="deleteMatch('${m.id}')" style="background: #ef4444; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">حذف</button>
                             ` : `
@@ -1146,15 +1236,86 @@ async function saveHonor() {
     }
 }
 
+// رندر کامل نمودار درختی جام حذفی برای نمایش به کاربران و ادمین
 function renderCup() {
-    setupCupSelects();
-    document.getElementById('b_s1_1').textContent = cupData.s1_1 || '؟';
-    document.getElementById('b_s1_2').textContent = cupData.s1_2 || '؟';
-    document.getElementById('b_s2_1').textContent = cupData.s2_1 || '؟';
-    document.getElementById('b_s2_2').textContent = cupData.s2_2 || '؟';
-    document.getElementById('b_f_1').textContent = cupData.f_1 || '؟';
-    document.getElementById('b_f_2').textContent = cupData.f_2 || '؟';
-    document.getElementById('b_winner').textContent = cupData.winner || '؟';
+    const countSelect = document.getElementById('cupTeamCountSelect');
+    if (countSelect) {
+        countSelect.value = cupData.teamCount || 4;
+    }
+    
+    // ساخت پنل تنظیمات ادمین
+    generateCupAdminPanel();
+
+    const bracketContainer = document.getElementById('cupBracketContainer');
+    if (!bracketContainer) return;
+
+    const count = cupData.teamCount || 4;
+    const teams = cupData.teams || [];
+    const quarterWinners = cupData.quarterWinners || ['', '', '', ''];
+    const semiWinners = cupData.semiWinners || ['', ''];
+    const winner = cupData.winner || '؟';
+
+    let bracketHtml = '';
+
+    if (count === 2) {
+        bracketHtml = `
+            <div class="bracket-column">
+                <div class="bracket-title">فینال مستقیم</div>
+                <div class="matchup final-match">
+                    <span>${teams[0] || '؟'}</span> vs <span>${teams[1] || '؟'}</span>
+                </div>
+            </div>
+            <div class="bracket-column">
+                <div class="bracket-title">قهرمان</div>
+                <div class="matchup trophy-match">🏆 <span>${winner}</span></div>
+            </div>
+        `;
+    } else if (count === 4) {
+        bracketHtml = `
+            <div class="bracket-column">
+                <div class="bracket-title">نیمه‌نهایی (۲ مسابقه)</div>
+                <div class="matchup"><span>${teams[0] || '؟'}</span> vs <span>${teams[1] || '؟'}</span></div>
+                <div class="matchup"><span>${teams[2] || '؟'}</span> vs <span>${teams[3] || '؟'}</span></div>
+            </div>
+            <div class="bracket-column">
+                <div class="bracket-title">فینال</div>
+                <div class="matchup final-match">
+                    <span>${semiWinners[0] || 'فینالیست ۱'}</span> vs <span>${semiWinners[1] || 'فینالیست ۲'}</span>
+                </div>
+            </div>
+            <div class="bracket-column">
+                <div class="bracket-title">قهرمان</div>
+                <div class="matchup trophy-match">🏆 <span>${winner}</span></div>
+            </div>
+        `;
+    } else if (count === 8) {
+        bracketHtml = `
+            <div class="bracket-column">
+                <div class="bracket-title">یک‌چهارم نهایی (۴ مسابقه)</div>
+                <div class="matchup"><span>${teams[0] || '؟'}</span> - <span>${teams[1] || '؟'}</span></div>
+                <div class="matchup"><span>${teams[2] || '؟'}</span> - <span>${teams[3] || '؟'}</span></div>
+                <div class="matchup"><span>${teams[4] || '؟'}</span> - <span>${teams[5] || '؟'}</span></div>
+                <div class="matchup"><span>${teams[6] || '؟'}</span> - <span>${teams[7] || '؟'}</span></div>
+            </div>
+            <div class="bracket-column">
+                <div class="bracket-title">نیمه‌نهایی (۲ مسابقه)</div>
+                <div class="matchup"><span>${quarterWinners[0] || '؟'}</span> - <span>${quarterWinners[1] || '؟'}</span></div>
+                <div class="matchup"><span>${quarterWinners[2] || '؟'}</span> - <span>${quarterWinners[3] || '؟'}</span></div>
+            </div>
+            <div class="bracket-column">
+                <div class="bracket-title">فینال</div>
+                <div class="matchup final-match">
+                    <span>${semiWinners[0] || 'فینالیست ۱'}</span> vs <span>${semiWinners[1] || 'فینالیست ۲'}</span>
+                </div>
+            </div>
+            <div class="bracket-column">
+                <div class="bracket-title">قهرمان</div>
+                <div class="matchup trophy-match">🏆 <span>${winner}</span></div>
+            </div>
+        `;
+    }
+
+    bracketContainer.innerHTML = bracketHtml;
 }
 
 function setupCupSelects() {
@@ -1167,22 +1328,240 @@ function setupCupSelects() {
     });
 }
 
+// تولید پویای اینپوت‌های نام تیم‌ها بر اساس انتخاب ادمین
+function generateCupInputs() {
+    const countSelect = document.getElementById('cupTeamCountSelect');
+    if (!countSelect) return;
+    
+    const count = parseInt(countSelect.value);
+    const container = document.getElementById('cupDynamicInputsContainer');
+    if (!container) return;
+
+    let html = `<h4 style="color: #ffd700; font-size: 0.9rem; margin-bottom: 5px;">نام ${count} تیم شرکت‌کننده را وارد کنید:</h4>`;
+    
+    for (let i = 0; i < count; i++) {
+        const savedName = (cupData.teams && cupData.teams[i]) ? cupData.teams[i] : '';
+        html += `
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.8rem; width: 60px;">تیم ${i + 1}:</span>
+                <input type="text" id="cupTeamName_${i}" value="${savedName}" placeholder="نام تیم..." style="flex: 1; padding: 6px; background: rgba(0,0,0,0.5); border: 1px solid #444; color: #fff; border-radius: 6px;">
+            </div>
+        `;
+    }
+
+    // اضافه کردن فیلد انتخاب قهرمان نهایی
+    html += `
+        <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px;">
+            <span style="font-size: 0.85rem; font-weight: bold; color: #2ecc71;">🏆 قهرمان جام:</span>
+            <select id="cupWinnerSelect" style="flex: 1; padding: 6px; background: rgba(0,0,0,0.5); border: 1px solid #444; color: #fff; border-radius: 6px;">
+                <option value="">انتخاب قهرمان...</option>
+                ${(cupData.teams || []).map(t => `<option value="${t}" ${cupData.winner === t ? 'selected' : ''}>${t || 'بدون نام'}</option>`).join('')}
+            </select>
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+
 async function saveCupData() {
+    const countSelect = document.getElementById('cupTeamCountSelect');
+    const teamCount = parseInt(countSelect.value);
+    
+    let teams = [];
+    for (let i = 0; i < teamCount; i++) {
+        const inputVal = document.getElementById(`cupTeamName_${i}`);
+        teams.push(inputVal ? inputVal.value.trim() : '');
+    }
+
+    let quarterWinners = [];
+    if (teamCount === 8) {
+        for (let q = 0; q < 4; q++) {
+            const qwEl = document.getElementById(`quarterWinner_${q}`);
+            quarterWinners.push(qwEl ? qwEl.value : '');
+        }
+    }
+
+    let semiWinners = [];
+    if (teamCount >= 4) {
+        for (let s = 0; s < 2; s++) {
+            const swEl = document.getElementById(`semiWinner_${s}`);
+            semiWinners.push(swEl ? swEl.value : '');
+        }
+    }
+
+    const winnerSelect = document.getElementById('cupWinnerSelect');
+    const winner = winnerSelect ? winnerSelect.value : '';
+
     cupData = {
-        s1_1: document.getElementById('cupSemi1_1').value,
-        s1_2: document.getElementById('cupSemi1_2').value,
-        s2_1: document.getElementById('cupSemi2_1').value,
-        s2_2: document.getElementById('cupSemi2_2').value,
-        f_1: document.getElementById('cupFinal_1').value,
-        f_2: document.getElementById('cupFinal_2').value,
-        winner: document.getElementById('cupWinner').value
+        teamCount,
+        teams,
+        quarterWinners,
+        semiWinners,
+        winner
     };
     
     // ذخیره در فضای ابری
-    await saveLeagueDataToCloud('cup', cupData);
+    const success = await saveLeagueDataToCloud('cup', cupData);
+    if (!success) return;
     
     renderCup();
-    alert('جام حذفی در فضای ابری بروزرسانی شد.');
+    alert('اطلاعات جام حذفی با موفقیت در فضای ابری بروزرسانی شد.');
+}
+
+function updateCupTeamListFromInputs() {
+    const count = cupData.teamCount || 4;
+    let newTeams = [];
+    for (let i = 0; i < count; i++) {
+        const inputEl = document.getElementById(`cupTeamName_${i}`);
+        newTeams.push(inputEl ? inputEl.value.trim() : '');
+    }
+    cupData.teams = newTeams;
+}
+
+function onCupTeamCountChange() {
+    const countSelect = document.getElementById('cupTeamCountSelect');
+    if (!countSelect) return;
+    const count = parseInt(countSelect.value);
+    
+    // تنظیم آرایه تیم‌ها به تعداد جدید
+    let newTeams = [];
+    for(let i=0; i<count; i++) {
+        newTeams[i] = (cupData.teams && cupData.teams[i]) ? cupData.teams[i] : '';
+    }
+    cupData.teamCount = count;
+    cupData.teams = newTeams;
+    
+    generateCupAdminPanel();
+}
+
+
+// تولید فرم‌های پنل ادمین بر اساس تعداد تیم‌ها
+function generateCupAdminPanel() {
+    const container = document.getElementById('cupAdminConfigContainer');
+    if (!container) return;
+
+    const count = cupData.teamCount || 4;
+    let html = '';
+
+    // ۱. ورود اسامی تیم‌های اولیه
+    html += `<div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 10px;">`;
+    html += `<h4 style="color: #ffd700; font-size: 0.9rem; margin-bottom: 8px;">مرحله اول: ورود اسامی ${count} تیم شرکت‌کننده</h4>`;
+    html += `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">`;
+    for (let i = 0; i < count; i++) {
+        const val = (cupData.teams && cupData.teams[i]) ? cupData.teams[i] : '';
+        html += `
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 0.8rem; width: 45px; color: #aaa;">تیم ${i + 1}:</span>
+                <input type="text" id="cupTeamName_${i}" value="${val}" placeholder="نام تیم..." oninput="updateCupTeamListFromInputs()" style="flex: 1; padding: 6px; background: rgba(0,0,0,0.5); border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 0.85rem;">
+            </div>
+        `;
+    }
+    html += `</div></div>`;
+
+    // ۲. اگر ۸ تیم باشد، انتخاب برندگان یک‌چهارم نهایی
+    if (count === 8) {
+        html += `<div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 10px;">`;
+        html += `<h4 style="color: #ffd700; font-size: 0.9rem; margin-bottom: 8px;">انتخاب صعودکنندگان به نیمه‌نهایی (۴ تیم برنده یک‌چهارم)</h4>`;
+        html += `<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">`;
+        
+        for (let q = 0; q < 4; q++) {
+            const t1 = (cupData.teams && cupData.teams[q*2]) ? cupData.teams[q*2] : `تیم ${q*2+1}`;
+            const t2 = (cupData.teams && cupData.teams[q*2+1]) ? cupData.teams[q*2+1] : `تیم ${q*2+2}`;
+            const currentQWinner = (cupData.quarterWinners && cupData.quarterWinners[q]) ? cupData.quarterWinners[q] : '';
+
+            html += `
+                <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px;">
+                    <div style="font-size: 0.75rem; color: #aaa; margin-bottom: 4px;">بازی ${q+1}: ${t1} vs ${t2}</div>
+                    <select id="quarterWinner_${q}" style="width: 100%; padding: 6px; background: #222; color: #fff; border: 1px solid #444; border-radius: 6px; font-size: 0.8rem;">
+                        <option value="">انتخاب برنده...</option>
+                        <option value="${t1}" ${currentQWinner === t1 ? 'selected' : ''}>${t1 || 'تیم اول'}</option>
+                        <option value="${t2}" ${currentQWinner === t2 ? 'selected' : ''}>${t2 || 'تیم دوم'}</option>
+                    </select>
+                </div>
+            `;
+        }
+        html += `</div></div>`;
+    }
+
+    // ۳. انتخاب برندگان نیمه‌نهایی (برای تعیین دو فینالیست)
+    if (count >= 4) {
+        // تعیین لیست تیم‌های حاضر در نیمه‌نهایی
+        let semiTeamOptions = [];
+        if (count === 8) {
+            semiTeamOptions = cupData.quarterWinners || ['', '', '', ''];
+        } else {
+            semiTeamOptions = cupData.teams || ['', '', '', ''];
+        }
+
+        html += `<div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 10px;">`;
+        html += `<h4 style="color: #ffd700; font-size: 0.9rem; margin-bottom: 8px;">انتخاب فینالیست‌ها (برندگان ۲ مسابقه نیمه‌نهایی)</h4>`;
+        html += `<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">`;
+
+        for (let s = 0; s < 2; s++) {
+            const idx1 = s * 2;
+            const idx2 = s * 2 + 1;
+            const t1 = semiTeamOptions[idx1] || `تیم ${idx1+1}`;
+            const t2 = semiTeamOptions[idx2] || `تیم ${idx2+1}`;
+            const currentSemiWinner = (cupData.semiWinners && cupData.semiWinners[s]) ? cupData.semiWinners[s] : '';
+
+            html += `
+                <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px;">
+                    <div style="font-size: 0.75rem; color: #aaa; margin-bottom: 4px;">نیمه‌نهایی ${s+1}: ${t1} vs ${t2}</div>
+                    <select id="semiWinner_${s}" style="width: 100%; padding: 6px; background: #222; color: #fff; border: 1px solid #444; border-radius: 6px; font-size: 0.8rem;">
+                        <option value="">انتخاب برنده...</option>
+                        <option value="${t1}" ${currentSemiWinner === t1 ? 'selected' : ''}>${t1 || 'تیم اول'}</option>
+                        <option value="${t2}" ${currentSemiWinner === t2 ? 'selected' : ''}>${t2 || 'تیم دوم'}</option>
+                    </select>
+                </div>
+            `;
+        }
+        html += `</div></div>`;
+    }
+
+    // ۴. انتخاب قهرمان نهایی فینال
+    let finalTeamOptions = [];
+    if (count === 2) {
+        finalTeamOptions = cupData.teams || ['', ''];
+    } else {
+        finalTeamOptions = cupData.semiWinners || ['', ''];
+    }
+
+    html += `<div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">`;
+    html += `<span style="font-size: 0.85rem; font-weight: bold; color: #2ecc71;">🏆 انتخاب قهرمان جام:</span>`;
+    html += `<select id="cupWinnerSelect" style="flex: 1; padding: 6px; background: #222; color: #fff; border: 1px solid #444; border-radius: 6px; font-size: 0.85rem;">`;
+    html += `<option value="">انتخاب قهرمان...</option>`;
+    finalTeamOptions.forEach(ft => {
+        if(ft) {
+            html += `<option value="${ft}" ${cupData.winner === ft ? 'selected' : ''}>${ft}</option>`;
+        }
+    });
+    html += `</select></div>`;
+
+    container.innerHTML = html;
+}
+
+// تابع بازنشانی و خالی کردن کامل اطلاعات جام حذفی
+async function resetCupData() {
+    if (!confirm('آیا مطمئن هستید که می‌خواهید تمام اطلاعات و اسامی جام حذفی را پاک و ریست کنید؟')) {
+        return;
+    }
+
+    // مقداردهی اولیه و خالی
+    cupData = {
+        teamCount: 4,
+        teams: ['', '', '', ''],
+        quarterWinners: ['', '', '', ''],
+        semiWinners: ['', ''],
+        winner: ''
+    };
+
+    // ذخیره حالت خالی در فضای ابری (Supabase)
+    const success = await saveLeagueDataToCloud('cup', cupData);
+    if (!success) return;
+
+    // رندر مجدد پنل و نمودار
+    renderCup();
+    alert('اطلاعات جام حذفی با موفقیت بازنشانی و خالی شد.');
 }
 
 function toggleEditStats() {
@@ -1198,44 +1577,142 @@ function toggleEditStats() {
     }
 }
 
+// تابع افزودن آمار برترین‌ها (گلزن، پاس گل، کلین‌شیت) با بررسی عدم وجود مقدار منفی
 async function addTopStat() {
     const type = document.getElementById('statTypeSelect').value;
     const player = document.getElementById('statPlayerInput').value.trim();
     const team = document.getElementById('statTeamSelect').value;
     const count = parseInt(document.getElementById('statCountInput').value) || 0;
 
-    if (!player || count <= 0) return alert('اطلاعات را درست وارد کنید.');
+    if (!player) {
+        alert('لطفاً نام بازیکن را وارد کنید.');
+        return;
+    }
+
+    if (count <= 0) {
+        alert('تعداد باید یک عدد مثبت (بزرگ‌تر از صفر) باشد.');
+        return;
+    }
 
     statsData[type].push({ player, team, count });
     statsData[type].sort((a, b) => b.count - a.count);
     
     // ذخیره در فضای ابری
-    await saveLeagueDataToCloud('stats', statsData);
+    const success = await saveLeagueDataToCloud('stats', statsData);
+    if (!success) return;
     
     renderStats();
     document.getElementById('statPlayerInput').value = '';
     document.getElementById('statCountInput').value = '';
-    alert('آمار جدید با موفقیت ثبت شد.');
+    alert('آمار جدید با موفقیت در فضای ابری ثبت شد.');
 }
 
 function renderStats() {
-    renderMiniTable('goalsTbody', statsData.goals);
-    renderMiniTable('assistsTbody', statsData.assists);
-    renderMiniTable('cleansheetsTbody', statsData.cleansheets);
+    renderMiniTable('goalsTbody', 'goals', statsData.goals);
+    renderMiniTable('assistsTbody', 'assists', statsData.assists);
+    renderMiniTable('cleansheetsTbody', 'cleansheets', statsData.cleansheets);
 }
 
-function renderMiniTable(tbodyId, list) {
+// تابع ویرایش تعداد گل/پاس‌گل/کلین‌شیت یک بازیکن
+async function editStatItem(type, index) {
+    const item = statsData[type][index];
+    if (!item) return;
+
+    const newCount = prompt(`ویرایش مقدار برای ${item.player} (${item.team}):`, item.count);
+    if (newCount === null) return; // انصراف
+
+    const parsedCount = parseInt(newCount);
+    if (isNaN(parsedCount) || parsedCount < 0) {
+        alert('لطفاً یک عدد معتبر وارد کنید.');
+        return;
+    }
+
+    // بروزرسانی مقدار
+    statsData[type][index].count = parsedCount;
+    statsData[type].sort((a, b) => b.count - a.count); // مرتب‌سازی مجدد
+
+    // ذخیره در فضای ابری (Supabase)
+    const success = await saveLeagueDataToCloud('stats', statsData);
+    if (!success) return;
+
+    renderStats();
+    alert('آمار بازیکن با موفقیت بروزرسانی شد.');
+}
+
+// تابع حذف یک رکورد از آمار
+async function deleteStatItem(type, index) {
+    const item = statsData[type][index];
+    if (!item) return;
+
+    if (!confirm(`آیا از حذف رکورد مربوط به بازیکن "${item.player}" مطمئن هستید؟`)) {
+        return;
+    }
+
+    // حذف آیتم از آرایه
+    statsData[type].splice(index, 1);
+
+    // ذخیره تغییرات در فضای ابری
+    const success = await saveLeagueDataToCloud('stats', statsData);
+    if (!success) return;
+
+    renderStats();
+    alert('رکورد مورد نظر با موفقیت حذف شد.');
+}
+
+function renderMiniTable(tbodyId, type, list) {
     const tbody = document.getElementById(tbodyId);
     if (!tbody) return;
-    tbody.innerHTML = (list || []).map((item, idx) => `
+
+    const isAdmin = currentUser === 'admin';
+
+    if (!list || list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${isAdmin ? 5 : 4}" style="text-align:center; color:#888;">آماری ثبت نشده است</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map((item, idx) => `
         <tr>
             <td>${idx + 1}</td>
             <td>${item.player}</td>
             <td>${item.team}</td>
             <td><strong>${item.count}</strong></td>
+            ${isAdmin ? `
+                <td style="display: flex; gap: 5px; justify-content: center; align-items: center;">
+                    <button onclick="editStatItem('${type}',${idx})" title="ویرایش تعداد" style="background: #eab308; color: #000; border: none; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button onclick="deleteStatItem('${type}',${idx})" title="حذف این رکورد" style="background: #ef4444; color: #fff; border: none; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            ` : ''}
         </tr>
     `).join('');
 }
+
+// تابع بازنشانی و خالی کردن کامل بخش بهترین‌ها (آقای گل، پاس گل، کلین‌شیت)
+async function resetStatsData() {
+    if (!confirm('آیا مطمئن هستید که می‌خواهید تمام آمارهای ثبت‌شده در بخش بهترین‌ها را پاک و ریست کنید؟')) {
+        return;
+    }
+
+    // خالی کردن آرایه‌های آمار
+    statsData = { 
+        goals: [], 
+        assists: [], 
+        cleansheets: [] 
+    };
+
+    // ذخیره حالت خالی در فضای ابری (Supabase)
+    const success = await saveLeagueDataToCloud('stats', statsData);
+    if (!success) return;
+
+    // رندر مجدد جداول و بستن پنل ویرایش
+    renderStats();
+    toggleEditStats();
+    alert('بخش بهترین‌ها با موفقیت ریست و خالی شد.');
+}
+
 // --- SETTINGS MODAL FUNCTIONS ---
 function openSettingsModal() {
     const modal = document.getElementById('settingsModal');
