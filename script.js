@@ -15,7 +15,13 @@ let standingsData = [];
 let historyData = [];
 let honorsData = [];
 let rulesData = [];
-let statsData = { goals: [], assists: [], cleansheets: [] };
+// در بخش تعریف متغیرها یا تابع بارگذاری
+let statsData = JSON.parse(localStorage.getItem('fvl_stats')) || { 
+    goals: [], 
+    assists: [], 
+    cleansheets: [], 
+    cards: [] // اضافه کردن آرایه کارت‌ها
+};
 let requestsData = [];
 // ساختار پیش‌فرض جام حذفی
 let cupData = JSON.parse(localStorage.getItem('fvl_cup')) || {
@@ -1582,35 +1588,104 @@ async function addTopStat() {
     const type = document.getElementById('statTypeSelect').value;
     const player = document.getElementById('statPlayerInput').value.trim();
     const team = document.getElementById('statTeamSelect').value;
-    const count = parseInt(document.getElementById('statCountInput').value) || 0;
 
     if (!player) {
         alert('لطفاً نام بازیکن را وارد کنید.');
         return;
     }
 
-    if (count <= 0) {
-        alert('تعداد باید یک عدد مثبت (بزرگ‌تر از صفر) باشد.');
-        return;
+    if (!statsData[type]) {
+        statsData[type] = [];
     }
 
-    statsData[type].push({ player, team, count });
-    statsData[type].sort((a, b) => b.count - a.count);
-    
-    // ذخیره در فضای ابری
+    // اگر بخش کارت‌ها انتخاب شده باشد
+    if (type === 'cards') {
+        const yellow = parseInt(document.getElementById('statYellowInput').value) || 0;
+        const red = parseInt(document.getElementById('statRedInput').value) || 0;
+
+        if (yellow <= 0 && red <= 0) {
+            alert('لطفاً حداقل یک کارت زرد یا قرمز وارد کنید.');
+            return;
+        }
+
+        statsData.cards.push({ player, team, yellow, red });
+        
+        // پاک کردن اینپوت‌های کارت
+        document.getElementById('statYellowInput').value = '';
+        document.getElementById('statRedInput').value = '';
+    } else {
+        // برای سایر بخش‌ها (گل، پاس‌گل، کلین‌شیت)
+        const count = parseInt(document.getElementById('statCountInput').value) || 0;
+        if (count <= 0) {
+            alert('تعداد باید یک عدد مثبت (بزرگ‌تر از صفر) باشد.');
+            return;
+        }
+
+        statsData[type].push({ player, team, count });
+        statsData[type].sort((a, b) => b.count - a.count);
+        
+        document.getElementById('statCountInput').value = '';
+    }
+
+    // ذخیره در فضای ابری (Supabase)
     const success = await saveLeagueDataToCloud('stats', statsData);
     if (!success) return;
-    
+
     renderStats();
     document.getElementById('statPlayerInput').value = '';
-    document.getElementById('statCountInput').value = '';
-    alert('آمار جدید با موفقیت در فضای ابری ثبت شد.');
+    alert('آمار جدید با موفقیت ثبت شد.');
 }
 
 function renderStats() {
     renderMiniTable('goalsTbody', 'goals', statsData.goals);
     renderMiniTable('assistsTbody', 'assists', statsData.assists);
     renderMiniTable('cleansheetsTbody', 'cleansheets', statsData.cleansheets);
+    renderCardsTable(); // اضافه کردن تابع رندر جدول کارت‌ها
+}
+
+function renderCardsTable() {
+    const tbody = document.getElementById('cardsTbody');
+    if (!tbody) return;
+
+    const isAdmin = currentUser === 'admin';
+    const list = statsData.cards || [];
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${isAdmin ? 6 : 5}" style="text-align:center; color:#888;">آماری ثبت نشده است</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map((item, idx) => `
+        <tr>
+            <td>${idx + 1}</td>
+            <td>${item.player}</td>
+            <td>${item.team}</td>
+            <td><span style="color: #facc15; font-weight: bold;">${item.yellow || 0}</span></td>
+            <td><span style="color: #ef4444; font-weight: bold;">${item.red || 0}</span></td>
+            ${isAdmin ? `
+                <td style="display: flex; gap: 5px; justify-content: center; align-items: center;">
+                    <button onclick="deleteStatItem('cards', ${idx})" title="حذف این رکورد" style="background: #ef4444; color: #fff; border: none; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            ` : ''}
+        </tr>
+    `).join('');
+}
+
+// تابع تغییر نمایش اینپوت‌ها بر اساس نوع آمار انتخابی
+function handleStatTypeChange() {
+    const type = document.getElementById('statTypeSelect').value;
+    const singleContainer = document.getElementById('singleCountContainer');
+    const cardContainer = document.getElementById('cardInputsContainer');
+
+    if (type === 'cards') {
+        if (singleContainer) singleContainer.style.display = 'none';
+        if (cardContainer) cardContainer.style.display = 'flex';
+    } else {
+        if (singleContainer) singleContainer.style.display = 'block';
+        if (cardContainer) cardContainer.style.display = 'none';
+    }
 }
 
 // تابع ویرایش تعداد گل/پاس‌گل/کلین‌شیت یک بازیکن
