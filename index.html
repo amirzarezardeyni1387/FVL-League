@@ -288,7 +288,7 @@
                 <button class="subnav-btn" onclick="switchLeagueSubTab('cupSub', this)"><i
                         class="fa-solid fa-trophy"></i> جام حذفی</button>
                 <button class="subnav-btn" onclick="switchLeagueSubTab('fixturesSubTab', this)">
-                        <i class="fa-solid fa-gamepad"></i> بازی‌ها</button>
+                    <i class="fa-solid fa-gamepad"></i> بازی‌ها</button>
                 <button class="subnav-btn" onclick="switchLeagueSubTab('statsSub', this)"><i
                         class="fa-solid fa-chart-line"></i> بهترین‌ها</button>
                 <button class="subnav-btn" onclick="switchLeagueSubTab('honorsSub', this)"><i
@@ -498,23 +498,45 @@
                     </div>
 
                     <!-- در بخش بهترین‌ها (index.html) -->
+                    <!-- در فایل index.html، بخش فرم ویرایش ادمین (statsEditForm) -->
                     <div id="statsEditForm" class="admin-form-block" style="display: none; margin-bottom: 20px;">
-                        <div class="stats-form-grid" style="margin-bottom: 10px;">
-                            <select id="statTypeSelect">
+                        <div class="stats-form-grid"
+                            style="margin-bottom: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+
+                            <!-- انتخاب نوع آمار -->
+                            <select id="statTypeSelect" onchange="handleStatTypeChange()">
                                 <option value="goals">گلزنان</option>
                                 <option value="assists">پاس گل‌دهندگان</option>
                                 <option value="cleansheets">کلین‌شیت‌ها</option>
+                                <option value="cards">کارت زرد / قرمز</option>
                             </select>
+
+                            <!-- نام بازیکن -->
                             <input type="text" id="statPlayerInput" placeholder="نام بازیکن">
+
+                            <!-- انتخاب تیم -->
                             <select id="statTeamSelect"></select>
-                            <input type="number" id="statCountInput" placeholder="تعداد" min="1" style="width: 80px;"
-                                oninput="if(this.value < 0) this.value = 0;">
+
+                            <!-- حالت عادی (برای گل، پاس گل، کلین‌شیت) -->
+                            <div id="singleCountContainer">
+                                <input type="number" id="statCountInput" placeholder="تعداد" min="1"
+                                    style="width: 80px;" oninput="if(this.value < 0) this.value = 0;">
+                            </div>
+
+                            <!-- حالت اختصاصی کارت‌ها (کارت زرد و کارت قرمز جداگانه) -->
+                            <div id="cardInputsContainer" style="display: none; gap: 5px;">
+                                <input type="number" id="statYellowInput" placeholder="🟨 زرد" min="0"
+                                    style="width: 70px;" oninput="if(this.value < 0) this.value = 0;">
+                                <input type="number" id="statRedInput" placeholder="🟥 قرمز" min="0"
+                                    style="width: 70px;" oninput="if(this.value < 0) this.value = 0;">
+                            </div>
+
                             <button class="btn-action btn-buy" onclick="addTopStat()">افزودن</button>
                         </div>
 
                         <!-- دکمه ریست بخش بهترین‌ها -->
                         <button class="btn-action btn-cancel" onclick="resetStatsData()"
-                            style="background: #ef4444; color: #fff; width: 100%; padding: 8px;">
+                            style="background: #ef4444; color: #fff; width: 100%; padding: 8px; margin-top: 10px;">
                             <i class="fa-solid fa-trash"></i> ریست و خالی کردن کامل بخش بهترین‌ها
                         </button>
                     </div>
@@ -529,13 +551,13 @@
                                         <th>بازیکن</th>
                                         <th>تیم</th>
                                         <th>گل</th>
-                                        <!-- اگر ادمین باشد ستون پنجم خودکار اضافه می‌شود -->
                                     </tr>
                                 </thead>
                                 <tbody id="goalsTbody"></tbody>
                             </table>
                         </div>
 
+                        <!-- جدول پاس گل -->
                         <div class="mini-table-box">
                             <h4>🎯 پاس گل</h4>
                             <table class="luxury-table mini">
@@ -551,6 +573,7 @@
                             </table>
                         </div>
 
+                        <!-- جدول کلین شیت -->
                         <div class="mini-table-box">
                             <h4>🧤 کلین شیت</h4>
                             <table class="luxury-table mini">
@@ -563,6 +586,23 @@
                                     </tr>
                                 </thead>
                                 <tbody id="cleansheetsTbody"></tbody>
+                            </table>
+                        </div>
+
+                        <!-- 👇 بخش جدید اضافه شده برای کارت‌های زرد و قرمز 👇 -->
+                        <div class="mini-table-box">
+                            <h4>🟨 کارت‌های جریمه (زرد / قرمز)</h4>
+                            <table class="luxury-table mini">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>بازیکن</th>
+                                        <th>تیم</th>
+                                        <th>🟨</th>
+                                        <th>🟥</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cardsTbody"></tbody>
                             </table>
                         </div>
                     </div>
