@@ -82,7 +82,7 @@
                 <h1 id="welcomeText" class="welcome-title">تیم منچستر سیتی</h1>
                 <div class="stadium-tag">
                     <i class="fa-solid fa-location-dot"></i>
-                    <span>فصل رسمی ۲۰۲۶ - استادیوم اختصاصی</span>
+                    <span>season 7</span>
                 </div>
             </div>
         </div>
@@ -203,14 +203,29 @@
     </main>
 
 
-    <!-- MODULE 4: NEWS SECTION -->
-    <main class="main-content page-section" id="newsSection">
-        <div class="news-container">
+   <!-- MODULE 4: NEWS SECTION -->
+<main class="main-content page-section" id="newsSection">
+    <div class="news-container">
+
+        <!-- نمای جزئیات خبر (در حالت عادی مخفی است) -->
+        <div id="singleNewsDetail" class="sub-card" style="display: none; text-align: right;">
+            <button class="btn-action btn-cancel" onclick="closeNewsDetail()" style="margin-bottom: 15px; cursor: pointer;">
+                <i class="fa-solid fa-arrow-right"></i> بازگشت به لیست اخبار
+            </button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span id="detailNewsBadge" class="badge" style="background: #4facfe; color: #000; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: bold;"></span>
+                <span id="detailNewsDate" style="font-size: 0.8rem; color: #8a99ad;"></span>
+            </div>
+            <h2 id="detailNewsTitle" style="color: #fff; margin-bottom: 15px; font-size: 1.3rem; line-height: 1.4;"></h2>
+            <div id="detailNewsContent" style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.8; white-space: pre-line; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;"></div>
+        </div>
+
+        <!-- کانتینر اصلی اخبار (لیست اخبار) -->
+        <div id="newsListMainContainer">
 
             <div id="conferenceCard" class="sub-card"
                 style="display: none; margin-bottom: 20px; text-align: center; background: linear-gradient(135deg, rgba(79, 172, 254, 0.15), rgba(0, 85, 255, 0.1)); border: 1px solid var(--accent-color); padding: 20px; border-radius: 18px; backdrop-filter: blur(15px);">
-                <h3
-                    style="margin-bottom: 8px; color: #fff; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <h3 style="margin-bottom: 8px; color: #fff; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <i class="fa-solid fa-microphone-lines text-warning"></i> سالن کنفرانس خبری و کل‌کل
                 </h3>
                 <p style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 15px; line-height: 1.5;">
@@ -222,7 +237,7 @@
                 </button>
             </div>
 
-            <!-- دکمه کنترلی مدیریت کنفرانس (فقط برای ادمین در پنل مدیریت اخبار نمایش داده می‌شود) -->
+            <!-- دکمه کنترلی مدیریت کنفرانس -->
             <div class="admin-news-panel admin-only" style="display: none;">
                 <div class="card-title">
                     <i class="fa-solid fa-sliders text-warning"></i>
@@ -275,8 +290,8 @@
             <div class="news-feed" id="newsFeed"></div>
 
         </div>
-    </main>
-
+    </div>
+</main>
     <!-- MODULE 5: LEAGUE SECTION -->
     <main class="main-content page-section" id="leagueSection">
         <div class="league-container">
