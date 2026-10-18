@@ -2342,3 +2342,8 @@ body {
         grid-template-columns: repeat(6, 1fr);
     }
 }
+/* افکت زیبایی برای تیتر خبرهای قابل کلیک */
+.news-title-link:hover {
+    color: var(--accent-color) !important;
+    text-decoration: underline;
+}
